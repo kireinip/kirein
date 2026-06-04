@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>キレイン｜トイレがきれいな店を探す｜その不安、消します。</title>
+<meta name="description" content="トイレが清潔・無臭・子ども安心で絞り込めるお店検索。プロの覆面調査と利用者のおすすめで“安心して入れる店”だけを掲載。トイレが目的になる店が見つかる。キレイン認証店掲載。" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@600;700&family=Cormorant+Garamond:wght@600&display=swap" rel="stylesheet" />
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDRfloVijkhdUhF9v_DG7O3JV17Fqd9V7w&libraries=places"></script>
+<style>
+  :root{
+    --pine:#0e3a33; --pine-deep:#082722; --mint:#25b598; --mint-soft:#e6f5f1;
+    --gold:#c2a25f; --ink:#182320; --muted:#5d6b66; --line:#e4eae7;
+    --bg:#ffffff; --bg-soft:#f6f9f8; --radius:16px; --shadow:0 16px 44px -22px rgba(14,58,51,.34);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font-family:"Noto Sans JP",system-ui,sans-serif;color:var(--ink);background:var(--bg);line-height:1.7;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,.serif{font-family:"Noto Serif JP",serif}
+  .en{font-family:"Cormorant Garamond",serif}
+  a{color:inherit;text-decoration:none}
+  .wrap{width:min(1240px,94vw);margin-inline:auto}
+  button{font-family:inherit;cursor:pointer}
+
+  /* header */
+  header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .head-in{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+  .logo{display:flex;align-items:baseline;gap:9px}
+  .logo .mark{display:flex;align-items:center;gap:7px;font-family:"Cormorant Garamond",serif;font-size:24px;letter-spacing:.1em;color:var(--pine);font-weight:600}
+  .logo .pin{width:20px;height:20px}
+  .logo .jp{font-weight:700;font-size:15px;color:var(--ink)}
+  .logo .sub{font-size:10.5px;color:var(--muted);letter-spacing:.06em}
+  .head-cta{display:flex;align-items:center;gap:16px}
+  .head-cta .owner{font-size:12.5px;color:var(--muted)}
+  .head-cta .owner:hover{color:var(--pine)}
+  .btn{display:inline-flex;align-items:center;gap:7px;padding:10px 18px;border-radius:999px;font-size:12.5px;font-weight:700;background:var(--pine);color:#fff;border:1px solid var(--pine);transition:.2s}
+  .btn:hover{background:var(--pine-deep);transform:translateY(-1px)}
+  .btn.sm{padding:8px 14px;font-size:11.5px}
+  .btn.mint{background:var(--mint);border-color:var(--mint);color:#062019}
+  .btn.mint:hover{background:#1ea487}
+  .btn.ghost{background:transparent;color:var(--pine)}
+  .btn.ghost:hover{background:var(--mint-soft)}
+
+  /* hero search */
+  .hero{background:radial-gradient(120% 120% at 80% -10%,#10463c,#0b2c27 60%,#082420);color:#fff;padding:48px 0 30px}
+  .hero h1{font-size:clamp(26px,4vw,44px);font-weight:700;letter-spacing:.01em}
+  .hero h1 .ac{color:var(--mint)}
+  .hero p.lead{margin-top:12px;color:#cfe2dc;font-size:14.5px;max-width:34em}
+  .searchbar{margin-top:26px;background:#fff;border-radius:16px;padding:10px;display:flex;gap:8px;box-shadow:0 30px 60px -30px rgba(0,0,0,.5)}
+  .searchbar .fieldset{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+  .searchbar .ipt{flex:1;display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:11px;background:var(--bg-soft);min-width:0}
+  .searchbar .ipt svg{flex:0 0 auto;color:var(--mint)}
+  .searchbar input,.searchbar select{border:0;background:transparent;font-family:inherit;font-size:14px;color:var(--ink);width:100%;outline:none}
+  .searchbar .btn{padding:0 26px;border-radius:11px;font-size:14px;flex:0 0 auto}
+  .chips{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px}
+  .chip{font-size:12.5px;padding:7px 15px;border-radius:999px;border:1px solid rgba(255,255,255,.28);color:#eaf4f0;background:rgba(255,255,255,.05);transition:.18s;white-space:nowrap}
+  .chip:hover{border-color:var(--mint)}
+  .chip.on{background:var(--mint);border-color:var(--mint);color:#062019;font-weight:700}
+  .chip .x{opacity:.7}
+
+  /* layout */
+  .results-top{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px;flex-wrap:wrap;gap:10px}
+  .results-top .count{font-size:14px}.results-top .count b{font-size:18px;color:var(--pine)}
+  .sortbox{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
+  .sortbox select{padding:7px 12px;border:1px solid var(--line);border-radius:9px;font-family:inherit;font-size:12.5px;background:#fff}
+  .layout{display:grid;grid-template-columns:1fr 0.92fr;gap:24px;align-items:start;padding-bottom:60px}
+
+  /* cards */
+  .list{display:grid;gap:14px}
+  .card{display:flex;gap:16px;border:1px solid var(--line);border-radius:var(--radius);padding:16px;background:#fff;transition:.22s;cursor:pointer}
+  .card:hover,.card.active{box-shadow:var(--shadow);transform:translateY(-2px);border-color:var(--mint)}
+  .card .thumb{flex:0 0 96px;width:96px;height:96px;border-radius:12px;display:grid;place-items:center;color:#fff;font-size:30px;background:linear-gradient(150deg,#1f7d6c,#0e3a33);position:relative;overflow:hidden}
+  .card .thumb .rankbadge{position:absolute;top:6px;left:6px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-family:"Cormorant Garamond",serif;font-weight:600;font-size:14px;color:#11241f}
+  .m-silver{background:linear-gradient(150deg,#e6ebef,#aab4bb)}
+  .m-gold{background:linear-gradient(150deg,#f0d790,#c2a25f)}
+  .m-platinum{background:linear-gradient(150deg,#e8d9f0,#d4b5e8)}
+  .m-black{background:linear-gradient(150deg,#2a2a2a,#0a0a0a)}
+  .card .body{flex:1;min-width:0}
+  .card .top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+  .card .name{font-family:"Noto Serif JP";font-weight:700;font-size:16.5px}
+  .card .meta{font-size:12px;color:var(--muted);margin-top:1px}
+  .card .cert{flex:0 0 auto;font-size:10.5px;font-weight:700;letter-spacing:.04em;padding:4px 9px;border-radius:7px;display:inline-flex;align-items:center;gap:4px}
+  .cert.gold{background:#f7efda;color:#9a7b32}.cert.silver{background:#eef1f4;color:#5d6b73}.cert.bronze{background:#f4e7db;color:#8a5f3c}
+  .scores{display:flex;gap:14px;margin-top:11px;flex-wrap:wrap}
+  .sc{font-size:11.5px;color:var(--muted)}
+  .sc b{display:block;font-size:16px;color:var(--ink);font-family:"Noto Serif JP"}
+  .sc b .star{color:var(--gold);font-size:11px}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
+  .tag{font-size:11px;padding:3px 9px;border-radius:6px;background:var(--mint-soft);color:#157a64}
+  .quote{margin-top:11px;font-size:12.5px;color:#46524e;border-left:2px solid var(--mint);padding-left:10px}
+  .kirei{display:flex;align-items:center;gap:6px;margin-top:11px;font-size:12px;color:var(--muted)}
+  .kirei b{color:var(--mint)}
+  .behav{margin-top:9px;font-size:12.5px;font-weight:700;color:#157a64;display:flex;align-items:center;gap:6px}
+
+  /* map */
+  .mapwrap{position:sticky;top:84px;height:calc(100vh - 110px);min-height:520px;border-radius:18px;overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow)}
+  .map{position:absolute;inset:0;background:
+      linear-gradient(0deg,rgba(14,58,51,.04),rgba(14,58,51,.04)),
+      #eef3f1;
+  }
+  /* faux streets */
+  .map::before,.map::after{content:"";position:absolute;inset:0;background-image:
+      repeating-linear-gradient(90deg,transparent 0 78px,#dde6e2 78px 80px),
+      repeating-linear-gradient(0deg,transparent 0 70px,#dde6e2 70px 72px)}
+  .map .road{position:absolute;background:#fff;box-shadow:0 0 0 1px #e0e8e4}
+  .map .r1{top:34%;left:-5%;width:110%;height:14px;transform:rotate(-4deg)}
+  .map .r2{top:0;left:46%;width:16px;height:120%;transform:rotate(6deg)}
+  .map .r3{top:68%;left:-5%;width:110%;height:10px;transform:rotate(3deg)}
+  .map .park{position:absolute;top:12%;left:8%;width:120px;height:90px;border-radius:14px;background:linear-gradient(160deg,#cfe7d4,#bfe0c7);opacity:.9}
+  .map .water{position:absolute;bottom:6%;right:4%;width:160px;height:80px;border-radius:40px;background:linear-gradient(160deg,#cfe5ee,#bcdcec);transform:rotate(-10deg)}
+  .pin{position:absolute;transform:translate(-50%,-100%);z-index:3;cursor:pointer;transition:transform .18s}
+  .pin .dot{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:grid;place-items:center;box-shadow:0 6px 12px -4px rgba(0,0,0,.4);border:2px solid #fff}
+  .pin .dot span{transform:rotate(45deg);font-family:"Cormorant Garamond",serif;font-weight:600;font-size:13px;color:#11241f}
+  .pin.bronze .dot{background:linear-gradient(150deg,#d8a679,#b07a4e)}
+  .pin.silver .dot{background:linear-gradient(150deg,#e6ebef,#aab4bb)}
+  .pin.gold .dot{background:linear-gradient(150deg,#f0d790,#c2a25f)}
+  .pin:hover,.pin.active{transform:translate(-50%,-100%) scale(1.25);z-index:5}
+  .pin .lbl{position:absolute;left:50%;top:-30px;transform:translateX(-50%);background:#0e3a33;color:#fff;font-size:11px;padding:4px 9px;border-radius:7px;white-space:nowrap;opacity:0;pointer-events:none;transition:.18s}
+  .pin:hover .lbl,.pin.active .lbl{opacity:1;top:-34px}
+  .map-legend{position:absolute;left:14px;bottom:14px;background:rgba(255,255,255,.94);border-radius:10px;padding:10px 12px;font-size:11px;box-shadow:var(--shadow);display:grid;gap:6px}
+  .map-legend div{display:flex;align-items:center;gap:7px}
+  .map-legend i{width:12px;height:12px;border-radius:50%}
+  .empty{padding:60px 20px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:var(--radius)}
+
+  /* owner banner */
+  .ownerbar{background:linear-gradient(120deg,#0e3a33,#082722);color:#fff;border-radius:20px;padding:34px;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;margin:10px 0 56px}
+  .ownerbar h3{font-size:20px}
+  .ownerbar p{color:#bcd2cb;font-size:13.5px;margin-top:6px;max-width:40em}
+
+  /* SEO links */
+  .seo{background:var(--bg-soft);padding:46px 0;border-top:1px solid var(--line)}
+  .seo h2{font-size:18px;margin-bottom:16px}
+  .seo .links{display:flex;flex-wrap:wrap;gap:9px}
+  .seo .links a{font-size:12.5px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px 15px;color:#3a463f;transition:.18s}
+  .seo .links a:hover{border-color:var(--mint);color:var(--pine)}
+
+  footer{background:var(--pine-deep);color:#9fb6af;padding:40px 0 26px}
+  footer .ft{display:flex;justify-content:space-between;flex-wrap:wrap;gap:18px;align-items:center}
+  footer .copy{width:100%;border-top:1px solid rgba(255,255,255,.1);margin-top:22px;padding-top:18px;font-size:11.5px;color:#7e958d}
+
+  /* modal */
+  .overlay{position:fixed;inset:0;z-index:200;background:rgba(8,20,17,.55);backdrop-filter:blur(3px);display:none;align-items:flex-end;justify-content:center}
+  .overlay.open{display:flex}
+  @media(min-width:780px){.overlay{align-items:center}}
+  .modal{background:#fff;width:min(560px,100%);max-height:92vh;overflow:auto;border-radius:20px 20px 0 0;animation:up .25s ease}
+  @media(min-width:780px){.modal{border-radius:20px}}
+  @keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+  .modal .mhead{position:relative;padding:30px 26px 22px;color:#fff;background:linear-gradient(150deg,#13564a,#0b2c27)}
+  .modal .mhead .close{position:absolute;top:14px;right:16px;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.15);border:0;color:#fff;font-size:18px}
+  .modal .mhead .mcert{font-size:11px;font-weight:700;letter-spacing:.06em;padding:4px 10px;border-radius:7px;display:inline-block;margin-bottom:10px}
+  .modal .mhead h3{font-size:22px}
+  .modal .mhead .mmeta{color:#bcd2cb;font-size:12.5px;margin-top:4px}
+  .modal .mbody{padding:24px 26px}
+  .scoregrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:22px}
+  .scoregrid .b{background:var(--bg-soft);border-radius:12px;padding:14px;text-align:center}
+  .scoregrid .b small{font-size:11px;color:var(--muted)}
+  .scoregrid .b b{display:block;font-family:"Noto Serif JP";font-size:24px;color:var(--pine)}
+  .reviews{display:grid;gap:12px;margin-bottom:8px}
+  .rv{border:1px solid var(--line);border-radius:12px;padding:13px 15px}
+  .rv .rt{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted)}
+  .rv .rs{color:var(--gold);font-size:12px}
+  .rv p{font-size:13px;margin-top:5px}
+  .msec-t{font-size:13px;font-weight:700;margin:20px 0 10px;display:flex;align-items:center;gap:8px}
+  .msec-t::after{content:"";flex:1;height:1px;background:var(--line)}
+  .rform .stars-in{display:flex;gap:18px;margin-bottom:14px;flex-wrap:wrap}
+  .rform .si{font-size:12px}
+  .rform .si .lab{color:var(--muted);margin-bottom:3px}
+  .rform .si .stt{font-size:22px;color:#d9e0dd;letter-spacing:2px;cursor:pointer}
+  .rform .si .stt b{color:var(--gold);cursor:pointer}
+  .rform textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;font-family:inherit;font-size:13px;resize:vertical}
+  .rform .note{font-size:11px;color:var(--muted);background:var(--mint-soft);border-radius:9px;padding:9px 12px;margin:12px 0;line-height:1.6}
+  .rform .btn{width:100%;justify-content:center;padding:13px}
+
+  /* user badge + mypage */
+  .user-badge{display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:999px;background:var(--mint-soft);color:var(--pine);font-size:12px;font-weight:700}
+  .user-badge .lv{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--mint);color:#fff;font-size:10px}
+  .user-badge .lv.lv0{background:#ccc}
+  .mypage-wrap{min-height:100vh;padding:40px 0}
+  .mypage-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+  .mypage-card h2{font-size:18px;margin-bottom:14px;color:var(--pine)}
+  .progress-bar{width:100%;height:12px;background:var(--bg-soft);border-radius:999px;overflow:hidden;margin:10px 0}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--mint),#1ea487);transition:width .4s ease}
+  .mypage-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:12px}
+  .stat{padding:12px;background:var(--bg-soft);border-radius:10px;text-align:center}
+  .stat .num{display:block;font-size:20px;font-weight:700;color:var(--pine)}
+  .stat .lab{display:block;font-size:11px;color:var(--muted);margin-top:4px}
+  .post-item{padding:12px;border-left:3px solid var(--mint);background:var(--bg-soft);border-radius:8px;margin-bottom:10px}
+  .post-item .st{display:flex;justify-content:space-between;font-size:12px}
+  .post-item .shop{font-weight:700;color:var(--pine)}
+  .post-item .pts{color:var(--mint);font-weight:700}
+  .post-item .dat{color:var(--muted);font-size:11px;margin-top:4px}
+
+  @media(max-width:860px){
+    .layout{grid-template-columns:1fr}
+    .mapwrap{position:relative;top:0;height:340px;min-height:0;order:-1}
+    .searchbar{flex-direction:column}
+    .searchbar .btn{padding:13px}
+    .head-cta .owner{display:none}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap head-in">
+    <a href="#" class="logo">
+      <span class="mark">
+        <svg class="pin" viewBox="0 0 24 24" fill="none"><path d="M12 22s7-6.2 7-12A7 7 0 0 0 5 10c0 5.8 7 12 7 12Z" fill="#25b598"/><circle cx="12" cy="10" r="2.6" fill="#fff"/></svg>
+        Kirein
+      </span>
+      <span style="display:flex;flex-direction:column;line-height:1.15">
+        <span class="jp">キレイン</span>
+        <span class="sub">トイレが清潔なお店検索</span>
+      </span>
+    </a>
+    <div class="head-cta">
+      <a class="owner" href="../clear-lp/index.html">店舗オーナーの方へ</a>
+      <a id="searchBtn" class="btn sm ghost" href="#/">探す</a>
+      <a id="postBtn" class="btn sm mint" href="#/post">投稿する</a>
+      <a id="userLink" class="btn sm mint" href="#/mypage" style="display:none">マイページ</a>
+      <a class="btn sm" href="../clear-lp/index.html" style="display:none">店を登録する</a>
+    </div>
+  </div>
+</header>
+
+<!-- HERO + SEARCH -->
+<section class="hero">
+  <div class="wrap">
+    <h1>トイレきれいかな？<br>その不安、<span class="ac">消します。</span></h1>
+    <p class=”lead”>名古屋市の清潔なお店を探す。実際に来店したユーザーのトイレ評価で、安心して入れるお店が見つかる。栄・名駅・千種・大須・熱田など名古屋全域対応。</p>
+
+    <div class="searchbar">
+      <div class="fieldset">
+        <div class="ipt">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="q" type="text" placeholder="店名・キーワードで探す" />
+        </div>
+        <div class="ipt" style="flex:0 0 150px">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.2 7-12A7 7 0 0 0 5 9c0 5.8 7 12 7 12Z"/><circle cx="12" cy="9" r="2.4"/></svg>
+          <select id="area">
+            <option value="">エリアすべて</option>
+          </select>
+        </div>
+        <div class="ipt" style="flex:0 0 140px">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+          <select id="cat">
+            <option value="">業態すべて</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn" onclick="render()">この条件で探す</button>
+    </div>
+
+    <div class="chips" id="chips">
+      <!-- attribute chips injected -->
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+  <div class="results-top">
+    <div class="count"><b id="cnt">0</b> 件の“きれいな店”</div>
+    <div class="sortbox">
+      <span>並び替え</span>
+      <select id="sort" onchange="render()">
+        <option value="clean">清潔スコアが高い順</option>
+        <option value="kirei">「きれい！」が多い順</option>
+        <option value="rank">認証ランク順</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="list" id="list"></div>
+    <div class="mapwrap">
+      <div id="map" style="width: 100%; height: 100%;"></div>
+    </div>
+  </div>
+
+  <div class="ownerbar">
+    <div>
+      <h3>あなたのお店も、ここに載せませんか？</h3>
+      <p>掲載されるのはポジティブな評価だけ。改善が必要な声は、店舗にだけ届きます。キレイン認証で“安心して入れる店”として選ばれましょう。</p>
+    </div>
+    <a class="btn mint" href="../clear-lp/index.html">10店舗限定・無料診断 →</a>
+  </div>
+</div>
+
+<!-- SEO -->
+<section class="seo">
+  <div class="wrap">
+    <h2>よく検索されているキーワード</h2>
+    <div class="links">
+      <a href="#">栄 トイレ きれい 居酒屋</a>
+      <a href="#">伏見 デート 清潔 レストラン</a>
+      <a href="#">丸の内 子連れ 安心 きれい</a>
+      <a href="#">栄 禁煙 無臭 焼鳥</a>
+      <a href="#">名古屋 高級感 清潔 焼肉</a>
+      <a href="#">中区 グルメ 清潔 名古屋コーチン</a>
+      <a href="#">女子会 パウダールーム きれい</a>
+      <a href="#">出張 安心 清潔 名古屋のお店</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap ft">
+    <a href="#" class="logo">
+      <span class="mark" style="color:#fff"><svg class="pin" viewBox="0 0 24 24" fill="none"><path d="M12 22s7-6.2 7-12A7 7 0 0 0 5 10c0 5.8 7 12 7 12Z" fill="#25b598"/><circle cx="12" cy="10" r="2.6" fill="#fff"/></svg>Kirein</span>
+      <span class="jp" style="color:#fff">キレイン</span>
+    </a>
+    <div style="display:flex;gap:24px;font-size:13px">
+      <a href="../clear-lp/index.html">店舗オーナーの方へ</a>
+    </div>
+    <div class="copy">© 2026 Kirein（キレイン） — トイレがきれいな店が、見つかる。 ※デモ画面です。掲載店・口コミはサンプルです。</div>
+  </div>
+</footer>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script>
+// ========== USER SYSTEM ==========
+const CAMPAIGN_START = new Date('2026-06-03');
+const CAMPAIGN_END = new Date('2026-06-30');
+const CAMPAIGN_MULTIPLIER = 3;
+
+function isInCampaign(){
+  const now = new Date();
+  return now >= CAMPAIGN_START && now <= CAMPAIGN_END;
+}
+
+function getCampaignMultiplier(){
+  return isInCampaign() ? CAMPAIGN_MULTIPLIER : 1;
+}
+
+function getUserData(){
+  return JSON.parse(localStorage.getItem('kirein_user')) || null;
+}
+
+function getOrCreateUser(nickname){
+  let user = getUserData();
+  if(!user){
+    user = {
+      user_id: 'u_' + Date.now() + '_' + Math.random().toString(36).substr(2,9),
+      nickname: nickname,
+      total_points: 0,
+      current_lv: 0,
+      post_count: 0,
+      verified: false,
+      created_at: new Date().toISOString()
+    };
+    localStorage.setItem('kirein_user', JSON.stringify(user));
+  }
+  return user;
+}
+
+function updateUserPoints(points){
+  let user = getUserData();
+  if(!user) return;
+  user.total_points += points;
+  user.post_count += 1;
+  checkLvUp(user);
+  localStorage.setItem('kirein_user', JSON.stringify(user));
+  return user;
+}
+
+function checkLvUp(user){
+  const LV_THRESHOLDS = [0, 500, 2000, 5000];
+  for(let i = LV_THRESHOLDS.length - 1; i >= 0; i--){
+    if(user.total_points >= LV_THRESHOLDS[i]){
+      if(user.current_lv !== i){
+        user.current_lv = i;
+        if(i > 0) showLvUpNotification(i);
+      }
+      break;
+    }
+  }
+}
+
+function showLvUpNotification(lv){
+  const lvText = ['ビジター','認定レポーター','見習い調査員','公認調査員'];
+  const msg = `🎉 おめでとうございます！\nあなたは Lv.${lv} ${lvText[lv]} に認定されました！`;
+  setTimeout(()=>alert(msg), 300);
+}
+
+function getPosts(){
+  return JSON.parse(localStorage.getItem('kirein_posts')) || [];
+}
+
+function addPost(shopId, cleanliness, air, comment, fixedPoints){
+  let posts = getPosts();
+  const points = fixedPoints !== undefined ? fixedPoints : getCampaignMultiplier() * 50;
+
+  posts.push({
+    post_id: 'p_' + Date.now(),
+    shop_id: shopId,
+    cleanliness_rating: cleanliness,
+    air_rating: air,
+    comment: comment,
+    points_earned: points,
+    created_at: new Date().toISOString()
+  });
+
+  localStorage.setItem('kirein_posts', JSON.stringify(posts));
+  return points;
+}
+
+function showLoginModal(){
+  const user = getUserData();
+  if(user){
+    showPostModal();
+  } else {
+    const nickname = prompt('ニックネームを入力してください（20字以内）:');
+    if(nickname && nickname.trim()){
+      getOrCreateUser(nickname.trim());
+      updateUIForLogin();
+      showPostModal();
+    }
+  }
+}
+
+function updateUIForLogin(){
+  const user = getUserData();
+  if(user){
+    const loginBtn = document.getElementById('loginBtn');
+    const userLink = document.getElementById('userLink');
+    if(loginBtn) loginBtn.style.display = 'none';
+    if(userLink) {
+      userLink.style.display = 'flex';
+      userLink.innerHTML = `<span class="user-badge">${user.nickname} <span class="lv lv${user.current_lv}">Lv.${user.current_lv}</span></span>`;
+    }
+  }
+}
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // 地球の半径（km）
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
+function showPostModal(){
+  const user = getUserData();
+  if(!user) return showLoginModal();
+  closeModal();
+
+  document.getElementById('modal').innerHTML = `
+    <div class="mhead">
+      <button class="close" onclick="closeModal()">×</button>
+      <h3>いまいるお店を報告する</h3>
+    </div>
+    <div class="mbody">
+      <div style="margin-bottom:16px">
+        <div style="font-size:12px;font-weight:700;color:var(--pine);margin-bottom:6px">🔍 Google Map から検索</div>
+        <input type="text" id="googlePlacesInput" placeholder="店名を入力（自動補完）" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:6px;font-family:inherit;font-size:13px;margin-bottom:8px">
+        <div id="autocompleteResults" style="display:none;background:#fff;border:1px solid var(--line);border-radius:6px;margin-bottom:8px;max-height:200px;overflow-y:auto"></div>
+        <button onclick="useGPS()" style="width:100%;padding:8px;background:var(--pine);color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">📍 GPS で直近の店舗を検索</button>
+      </div>
+
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px">または選択：</div>
+      <div id="storeListContainer" style="max-height:300px;overflow-y:auto">
+        <div style="text-align:center;color:var(--muted);padding:20px;font-size:12px">検索または GPS で店舗を選択してください</div>
+      </div>
+    </div>`;
+
+  document.getElementById('overlay').classList.add('open');
+
+  // Google Places Autocomplete を初期化
+  initGooglePlacesAutocomplete();
+}
+
+function initGooglePlacesAutocomplete(){
+  const input = document.getElementById('googlePlacesInput');
+  if(!input) return;
+
+  // フォールバック：既存の STORES リストで検索（Google Places API なくても動作）
+  let debounceTimer;
+  input.addEventListener('input', (e) => {
+    clearTimeout(debounceTimer);
+    const query = e.target.value.toLowerCase();
+
+    if(query.length < 2) {
+      document.getElementById('autocompleteResults').style.display = 'none';
+      return;
+    }
+
+    debounceTimer = setTimeout(() => {
+      // まず既存の STORES リストで検索
+      const localResults = STORES.filter(s =>
+        s.name.toLowerCase().includes(query) ||
+        s.address?.toLowerCase().includes(query) ||
+        s.area.toLowerCase().includes(query)
+      ).slice(0, 8);
+
+      if(localResults.length > 0) {
+        const resultsDiv = document.getElementById('autocompleteResults');
+        resultsDiv.innerHTML = localResults.map(s =>
+          `<div style="padding:10px;border-bottom:1px solid var(--line);cursor:pointer;font-size:12px;transition:.2s;background:#f9f9f9" onmouseover="this.style.background='var(--mint-soft)'" onmouseout="this.style.background='#f9f9f9'" onclick="selectStoreForPost(${s.id})">${s.name}<br><span style="color:var(--muted);font-size:11px">${s.address || s.area}</span></div>`
+        ).join('');
+        resultsDiv.style.display = 'block';
+        console.log('✅ ローカル検索結果:', localResults.length, '件');
+        return;
+      }
+
+      // Google Places API が使える場合は API を試す
+      if(!window.google || !google.maps.places) {
+        document.getElementById('autocompleteResults').innerHTML = '<div style="padding:10px;color:var(--muted);font-size:12px">検索結果がありません（Google Places API が有効になっていない可能性があります）</div>';
+        document.getElementById('autocompleteResults').style.display = 'block';
+        console.log('⚠️ ローカルに該当なし。Google Places API も利用不可。');
+        return;
+      }
+
+      // Google Places Autocomplete Service を使用
+      if(!autocompleteService) {
+        autocompleteService = new google.maps.places.AutocompleteService();
+      }
+
+      const nagoyaBias = new google.maps.LatLngBounds(
+        { lat: 35.0, lng: 136.6 },
+        { lat: 35.3, lng: 137.0 }
+      );
+
+      try {
+        autocompleteService.getPlacePredictions(
+          {
+            input: query,
+            bounds: nagoyaBias,
+            componentRestrictions: { country: 'jp' },
+            language: 'ja'
+          },
+          (predictions, status) => {
+            if(status === google.maps.places.PlacesServiceStatus.OK && predictions) {
+              const resultsDiv = document.getElementById('autocompleteResults');
+              resultsDiv.innerHTML = predictions.slice(0, 8).map((pred, idx) =>
+                `<div style="padding:10px;border-bottom:1px solid var(--line);cursor:pointer;font-size:12px;transition:.2s;background:#f9f9f9" onmouseover="this.style.background='var(--mint-soft)'" onmouseout="this.style.background='#f9f9f9'" onclick="selectGooglePlace('${pred.place_id}', '${pred.main_text.replace(/'/g, "\\'")}')">${pred.main_text}<br><span style="color:var(--muted);font-size:11px">${pred.secondary_text || ''}</span></div>`
+              ).join('');
+              resultsDiv.style.display = 'block';
+              console.log('✅ Google Places API 検索結果:', predictions.length, '件');
+            } else {
+              console.log('⚠️ Places API エラー:', status);
+            }
+          }
+        );
+      } catch(err) {
+        console.error('❌ Autocomplete エラー:', err);
+      }
+    }, 300);
+  });
+
+  console.log('✅ Autocomplete 初期化完了（ローカル+Google Places ハイブリッド）');
+}
+
+function selectGooglePlace(placeId, placeName){
+  if(!placesService) {
+    console.log('Places Service 未初期化');
+    return;
+  }
+
+  placesService.getDetails({ placeId: placeId, language: 'ja' }, (place, status) => {
+    if(status === google.maps.places.PlacesServiceStatus.OK && place) {
+      // Google Map の店舗情報を Kirein に登録
+      const newStore = {
+        id: Math.max(...STORES.map(s => s.id), 0) + 1,
+        name: place.name,
+        area: extractArea(place.formatted_address) || '名古屋',
+        cat: '飲食店',
+        rank: 'bronze',
+        icon: '🍽️',
+        sc: { toilet: 3.5, air: 3.5, total: 3.5 },
+        kirei: 0,
+        tags: place.types || [],
+        lat: place.geometry.location.lat(),
+        lng: place.geometry.location.lng(),
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        reviews: place.reviews || [],
+        placeId: placeId,
+        rating: place.rating || 3.5,
+        address: place.formatted_address,
+        phone: place.formatted_phone_number || '',
+        website: place.website || ''
+      };
+
+      // STORES に追加（重複チェック）
+      const exists = STORES.find(s => s.placeId === placeId);
+      if(!exists) {
+        STORES.push(newStore);
+      }
+
+      // 投稿フロー へ
+      closeModal();
+      proceedToPostForm(exists ? exists.id : newStore.id);
+    }
+  });
+}
+
+function extractArea(address){
+  // 住所から区を抽出（例：「〇〇区」）
+  const match = address.match(/(.+区)/);
+  return match ? match[1] : null;
+}
+
+function filterStores(){
+  const searchTerm = document.getElementById('shopSearchInput').value.toLowerCase();
+  const filtered = STORES.filter(s => s.name.toLowerCase().includes(searchTerm) || s.area.toLowerCase().includes(searchTerm));
+
+  const listContainer = document.getElementById('storeListContainer');
+  listContainer.innerHTML = filtered.length ?
+    filtered.map(s => `<div class="card store-item" style="margin-bottom:10px;cursor:pointer" onclick="proceedToPostForm(${s.id})">${s.name} (${s.area})</div>`).join('')
+    : '<div style="text-align:center;color:var(--muted);padding:20px">該当する店舗がありません</div>';
+}
+
+function useGPS(){
+  if (!navigator.geolocation) {
+    alert('このブラウザは位置情報対応していません');
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const { latitude, longitude } = position.coords;
+
+      // 各店舗との距離を計算
+      const storesWithDistance = STORES.map(s => ({
+        ...s,
+        distance: calculateDistance(latitude, longitude, s.lat, s.lng)
+      })).sort((a, b) => a.distance - b.distance);
+
+      // 距離付きで表示
+      const listContainer = document.getElementById('storeListContainer');
+      listContainer.innerHTML = storesWithDistance.map(s =>
+        `<div class="card store-item" style="margin-bottom:10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center" onclick="proceedToPostForm(${s.id})">
+          <div>${s.name} (${s.area})</div>
+          <div style="font-size:11px;color:var(--muted)">${s.distance.toFixed(1)}km</div>
+        </div>`
+      ).join('');
+
+      // 検索フィールドをクリア
+      document.getElementById('shopSearchInput').value = '';
+    },
+    (error) => {
+      alert('位置情報の取得に失敗しました: ' + error.message);
+    }
+  );
+}
+
+function addNewShop(){
+  const shopName = document.getElementById('newShopName').value.trim();
+  if(!shopName) return alert('店名を入力してください');
+
+  // GPS座標を取得して新規店舗を登録
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        createNewStore(shopName, latitude, longitude);
+      },
+      (error) => {
+        // GPS失敗時はデフォルト座標を使用
+        console.log('GPS失敗、デフォルト座標で登録:', error.message);
+        createNewStore(shopName, 35.1705, 136.8819);
+      }
+    );
+  } else {
+    createNewStore(shopName, 35.1705, 136.8819);
+  }
+}
+
+function createNewStore(shopName, lat, lng){
+  const newStore = {
+    id: STORES.length + 1,
+    name: shopName,
+    area: '名古屋中区',
+    cat: '飲食店',
+    rank: 'bronze',
+    icon: '🍽️',
+    sc: {toilet: 4.0, air: 4.0, total: 4.0},
+    kirei: 0,
+    tags: [],
+    lat: lat,
+    lng: lng,
+    x: 50,
+    y: 50,
+    reviews: []
+  };
+  STORES.push(newStore);
+  proceedToPostForm(newStore.id);
+}
+
+function checkPostStatus(shopId){
+  const posts = getPosts()
+    .filter(p => p.shop_id === shopId)
+    .sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+
+  if(posts.length === 0){
+    return { type:'first', points: getCampaignMultiplier() * 50 };
+  }
+  const diffDays = Math.floor((new Date() - new Date(posts[0].created_at)) / 86400000);
+  if(diffDays < 30){
+    return { type:'blocked', waitDays: 30 - diffDays };
+  }
+  return { type:'return', points: 10 };
+}
+
+function proceedToPostForm(shopId){
+  const shop = STORES.find(s => s.id === shopId);
+  if(!shop) return;
+
+  const status = checkPostStatus(shopId);
+
+  // 1ヶ月以内 → ブロック画面
+  if(status.type === 'blocked'){
+    document.getElementById('modal').innerHTML = `
+      <div class="mhead">
+        <button class="close" onclick="closeModal()">×</button>
+        <h3>${shop.name}</h3>
+        <div class="mmeta">${shop.area}・${shop.cat}</div>
+      </div>
+      <div class="mbody" style="text-align:center;padding:30px">
+        <div style="font-size:48px;margin:10px 0">⏳</div>
+        <div style="font-size:18px;font-weight:700;color:var(--pine);margin:16px 0">あと ${status.waitDays} 日後に投稿できます</div>
+        <div style="background:var(--bg-soft);border-radius:12px;padding:16px;margin:16px 0;font-size:13px;color:var(--muted);line-height:1.8">
+          同じお店への投稿は<b style="color:var(--pine)">1ヶ月に1回</b>まで。<br>
+          再来店してからまた投稿してください！<br>
+          再来店投稿では <b style="color:var(--mint)">+10pt</b> 獲得できます。
+        </div>
+        <button class="btn ghost" onclick="closeModal()" style="width:100%;justify-content:center;padding:13px">閉じる</button>
+      </div>`;
+    document.getElementById('overlay').classList.add('open');
+    return;
+  }
+
+  // 初回 or 再来店 → 評価フォーム
+  const isReturn = status.type === 'return';
+  const noteHtml = isReturn
+    ? `<div class="note" style="background:#fff8e1;border-left:3px solid #f0c040;color:#7a6000">🔄 再来店投稿: <b>+${status.points}pt</b>（同じ店の2回目以降）</div>`
+    : `<div class="note">🎉 初回投稿！キャンペーン中: 通常50pt → <b style="color:var(--mint)">+${status.points}pt</b></div>`;
+
+  document.getElementById('modal').innerHTML = `
+    <div class="mhead">
+      <button class="close" onclick="closeModal()">×</button>
+      <h3>${shop.name} を評価する</h3>
+      <div class="mmeta">${shop.area}・${shop.cat} &nbsp;${isReturn ? '🔄 再来店' : '🆕 初回'}</div>
+    </div>
+    <div class="mbody">
+      <form id="postFormSubmit" onsubmit="submitPost(event, ${shopId})">
+        <div class="stars-in">
+          <div class="si"><div class="lab">🚻 トイレ清潔</div><div class="stt" data-k="0" style="font-size:28px">★★★★★</div></div>
+          <div class="si"><div class="lab">💨 空気・無臭</div><div class="stt" data-k="1" style="font-size:28px">★★★★★</div></div>
+        </div>
+        <textarea id="postComment" rows="3" placeholder="どこが良かったですか？" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;font-family:inherit;font-size:13px;resize:vertical;margin-bottom:12px"></textarea>
+        ${noteHtml}
+        <button class="btn mint" type="submit" style="width:100%;justify-content:center;padding:13px;margin-top:8px">投稿する +${status.points}pt</button>
+      </form>
+    </div>`;
+
+  document.querySelectorAll('#postFormSubmit .stt').forEach(st => {
+    st.innerHTML = [...Array(5)].map((_,i) => `<b data-v="${i+1}" style="cursor:pointer">★</b>`).join('');
+    st.querySelectorAll('b').forEach(b => {
+      b.onclick = () => {
+        const v = +b.dataset.v;
+        st.querySelectorAll('b').forEach((x,i) => x.style.color = i < v ? '#c2a25f' : '#d9e0dd');
+        st.dataset.val = v;
+      };
+    });
+    st.querySelectorAll('b').forEach((x,i) => x.style.color = i < 5 ? '#c2a25f' : '#d9e0dd');
+    st.dataset.val = 5;
+  });
+
+  document.getElementById('overlay').classList.add('open');
+}
+
+function submitPost(e, shopId){
+  e.preventDefault();
+
+  try {
+    const user = getUserData();
+    if(!user) { alert('ログインしてください'); return; }
+
+    const form = e.target;
+    const cleanliness = +form.querySelector('[data-k="0"]').dataset.val || 5;
+    const air         = +form.querySelector('[data-k="1"]').dataset.val || 5;
+    const comment     = (document.getElementById('postComment')?.value || '');
+    const status      = checkPostStatus(shopId);
+    if(status.type === 'blocked'){ alert(`あと${status.waitDays}日後に投稿できます`); return; }
+    const points      = addPost(shopId, cleanliness, air, comment, status.points);
+    const updatedUser = updateUserPoints(points);
+
+    // kirei カウントを安全に更新
+    const shop = STORES.find(s => s.id === shopId);
+    if(shop) shop.kirei += 1;
+
+    // render() は探すページが表示中の時だけ呼ぶ
+    try { render(); } catch(err) { /* 投稿ページ表示中は不要 */ }
+
+    // 完了モーダルを表示
+    document.getElementById('modal').innerHTML = `
+      <div class="mhead">
+        <button class="close" onclick="closeModal()">×</button>
+        <h3>投稿完了！🎉</h3>
+      </div>
+      <div class="mbody" style="text-align:center;padding:30px">
+        <div style="font-size:64px;margin:10px 0">🎉</div>
+        <div style="font-size:24px;font-weight:700;color:var(--mint);margin:16px 0">+${points}pt 獲得！</div>
+        <div style="background:var(--bg-soft);border-radius:12px;padding:20px;margin:16px 0">
+          <div style="color:var(--muted);font-size:12px;margin-bottom:6px">現在のポイント</div>
+          <div style="font-size:36px;font-weight:700;color:var(--pine)">${updatedUser.total_points}pt</div>
+          <div style="margin-top:8px;color:var(--muted);font-size:13px">Lv.${updatedUser.current_lv} ${['ビジター','認定レポーター','見習い調査員','公認調査員'][updatedUser.current_lv]}</div>
+        </div>
+        <div style="color:var(--muted);font-size:12px;margin-bottom:16px">投稿ありがとうございます！</div>
+        <button class="btn mint" onclick="closeModal();window.location.hash='/mypage'" style="width:100%;justify-content:center;padding:13px">マイページで確認する →</button>
+      </div>`;
+    document.getElementById('overlay').classList.add('open');
+
+  } catch(err) {
+    console.error('❌ submitPost エラー:', err);
+    alert('投稿中にエラーが発生しました: ' + err.message);
+  }
+}
+
+// ========== MYPAGE ==========
+function showMyPage(){
+  const user = getUserData();
+  if(!user) return;
+
+  const posts = getPosts().filter(p => p.created_at);
+  const userPosts = posts.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+
+  const LV_THRESHOLDS = [0, 500, 2000, 5000];
+  const lvPercent = (user.total_points / (LV_THRESHOLDS[user.current_lv + 1] || LV_THRESHOLDS[3])) * 100;
+
+  const content = `
+    <section style="background:var(--bg-soft);padding:20px 0;border-bottom:1px solid var(--line)">
+      <div class="wrap">
+        <h1 style="font-size:24px;margin-bottom:10px">こんにちは、<b>${user.nickname}</b>さん</h1>
+        <div style="font-size:14px;color:var(--muted)">Lv.${user.current_lv} ${['ビジター','認定レポーター','見習い調査員','公認調査員'][user.current_lv]}</div>
+      </div>
+    </section>
+
+    <div class="wrap mypage-wrap">
+      <div class="mypage-card">
+        <h2>💎 あなたのポイント</h2>
+        <div style="font-size:32px;font-weight:700;color:var(--pine);margin:10px 0">${user.total_points}pt</div>
+        <div style="color:var(--muted);font-size:13px">次のレベルまで: ${LV_THRESHOLDS[user.current_lv + 1] ? LV_THRESHOLDS[user.current_lv + 1] - user.total_points : '達成！'}pt</div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:${lvPercent}%"></div>
+        </div>
+        <div class="mypage-stats">
+          <div class="stat">
+            <span class="num">${user.post_count}</span>
+            <span class="lab">投稿数</span>
+          </div>
+          <div class="stat">
+            <span class="num">${Math.round(lvPercent)}%</span>
+            <span class="lab">進捗度</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mypage-card">
+        <h2>📝 あなたの投稿</h2>
+        ${userPosts.length ? userPosts.map(p => {
+          const shop = STORES.find(s => s.id === p.shop_id);
+          const date = new Date(p.created_at);
+          return `<div class="post-item">
+            <div class="st">
+              <span class="shop">${shop?.name || 'Unknown'}</span>
+              <span class="pts">+${p.points_earned}pt</span>
+            </div>
+            <div class="dat">${date.toLocaleDateString('ja-JP')} ${date.toLocaleTimeString('ja-JP')}</div>
+            ${p.comment ? `<div style="margin-top:8px;font-size:13px;color:#333">"${p.comment}"</div>` : ''}
+          </div>`;
+        }).join('') : '<div style="text-align:center;color:var(--muted);padding:40px 0">まだ投稿がありません</div>'}
+      </div>
+
+      <div class="mypage-card">
+        <h2>🎯 Lv.1「認定レポーター」への道</h2>
+        <div style="font-size:13px;line-height:1.8">
+          <div style="margin:8px 0">✓ ポイント: ${user.total_points}/500pt</div>
+          <div style="margin:8px 0">ビジターから認定レポーターへ昇格すると、投稿時のポイントが増加します。</div>
+          ${user.total_points >= 500 ? '<div style="margin:16px 0;color:var(--mint);font-weight:700">🎉 あなたは既に Lv.1 認定レポーターです！</div>' : ''}
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:16px">
+        <button class="btn mint" style="flex:1;justify-content:center;padding:14px" onclick="closeModal();showPostModal()">
+          ➕ 新しいお店を評価する
+        </button>
+        <button class="btn ghost" style="flex:1;justify-content:center;padding:14px" onclick="window.location.href='#/'">
+          ← ホームに戻る
+        </button>
+      </div>
+    </div>
+  `;
+
+  const main = document.querySelector('body');
+  const existingContent = document.querySelector('.wrap, section.hero');
+
+  // すべてのメインコンテンツを非表示
+  document.querySelectorAll('header, section, .wrap:not(.mypage-wrap), .layout, .ownerbar, .seo, footer').forEach(el => {
+    el.style.display = 'none';
+  });
+
+  // マイページコンテンツを追加
+  const mypageDiv = document.createElement('div');
+  mypageDiv.id = 'mypage-content';
+  mypageDiv.innerHTML = content;
+  document.body.appendChild(mypageDiv);
+}
+
+function hideMyPage(){
+  const mypageContent = document.getElementById('mypage-content');
+  if(mypageContent) mypageContent.remove();
+  document.querySelectorAll('header, section, .wrap, .layout, .ownerbar, .seo, footer').forEach(el => {
+    el.style.display = '';
+  });
+}
+
+// ========== ROUTER ==========
+function handleRoute(){
+  const hash = window.location.hash || '#/';
+
+  // すべてのページを隠す
+  hideMyPage();
+  hidePostPage();
+
+  if(hash === '#/mypage'){
+    showMyPage();
+  } else if(hash === '#/post'){
+    showPostPage();
+  } else {
+    showSearchPage(); // ホームページ / 検索ページ
+  }
+}
+
+function showSearchPage(){
+  // ホームページ（検索・探すページ）を表示
+  document.querySelectorAll('header, section, .wrap, .layout, .ownerbar, .seo, footer').forEach(el => {
+    el.style.display = '';
+  });
+}
+
+function showPostPage(){
+  // 投稿ページ（フルスクリーン）を表示
+  document.querySelectorAll('section, .wrap:not(.post-page-wrap), .layout, .ownerbar, .seo, footer').forEach(el => {
+    el.style.display = 'none';
+  });
+
+  let postPageContent = document.getElementById('post-page-content');
+  if(!postPageContent) {
+    postPageContent = document.createElement('div');
+    postPageContent.id = 'post-page-content';
+    document.body.appendChild(postPageContent);
+  }
+
+  postPageContent.innerHTML = `
+    <section style="background:linear-gradient(150deg,#13564a,#0b2c27);color:#fff;padding:40px 0 30px">
+      <div class="wrap">
+        <h1 style="font-size:32px;font-weight:700;margin-bottom:12px">いまいるお店の清潔感を報告する</h1>
+        <p style="color:#bcd2cb;font-size:14px">トイレの清潔さ、空気の良さを5段階評価で投稿。ポイントを獲得して、キレインレポーターへ！</p>
+      </div>
+    </section>
+
+    <div class="wrap" style="padding:40px 0">
+      <div style="max-width:600px;margin:0 auto">
+        <div style="background:#fff;border:1px solid var(--line);border-radius:16px;padding:30px;box-shadow:var(--shadow)">
+
+          <!-- Step 1: 店舗検索 -->
+          <div id="postStep1" style="display:block">
+            <h2 style="font-size:18px;color:var(--pine);margin-bottom:16px">📍 Step 1: お店を検索</h2>
+
+            <div style="margin-bottom:16px">
+              <label style="font-size:12px;color:var(--muted);font-weight:700;display:block;margin-bottom:6px">🔍 Google Map から検索</label>
+              <input type="text" id="googlePlacesInput" placeholder="店名を入力（自動補完）" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:13px;margin-bottom:8px">
+              <div id="autocompleteResults" style="display:none;background:#fff;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;max-height:200px;overflow-y:auto"></div>
+            </div>
+
+            <div style="display:flex;gap:8px;margin-bottom:16px">
+              <button onclick="useGPSForPost()" style="flex:1;padding:12px;background:var(--pine);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px">📍 GPS で直近の店舗を検索</button>
+            </div>
+
+            <div id="selectedStore" style="display:none;background:var(--mint-soft);border:1px solid var(--mint);border-radius:8px;padding:16px;margin-bottom:16px">
+              <div style="font-size:12px;color:var(--muted);margin-bottom:6px">選択されたお店</div>
+              <div style="font-size:16px;font-weight:700;color:var(--pine)" id="selectedStoreName"></div>
+              <div style="font-size:12px;color:var(--muted);margin-top:4px" id="selectedStoreAddress"></div>
+            </div>
+
+            <div id="storeListContainer" style="max-height:300px;overflow-y:auto;margin-bottom:16px">
+              <div style="text-align:center;color:var(--muted);padding:20px;font-size:12px">検索または GPS で店舗を選択してください</div>
+            </div>
+
+            <div style="text-align:center;color:var(--muted);font-size:12px;padding:8px">👆 上のリストからお店をタップしてください</div>
+          </div>
+
+          <!-- Step 2: 評価入力 -->
+          <div id="postStep2" style="display:none">
+            <h2 style="font-size:18px;color:var(--pine);margin-bottom:16px">🚻 Step 2: 清潔感を評価</h2>
+            <form id="postFormSubmit" onsubmit="submitPost(event)">
+              <div class="stars-in">
+                <div class="si"><div class="lab">🚻 トイレ清潔</div><div class="stt" data-k="0" style="font-size:28px">★★★★★</div></div>
+                <div class="si"><div class="lab">💨 空気・無臭</div><div class="stt" data-k="1" style="font-size:28px">★★★★★</div></div>
+              </div>
+              <textarea id="postComment" rows="3" placeholder="どこが良かったですか？" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;font-family:inherit;font-size:13px;resize:vertical;margin-bottom:12px"></textarea>
+              <div class="note">💡 キャンペーン中: 通常50pt → ${getCampaignMultiplier() * 50}pt!</div>
+              <button class="btn mint" type="submit" style="width:100%;justify-content:center;padding:13px">投稿する +${getCampaignMultiplier() * 50}pt</button>
+            </form>
+            <button onclick="goBackToStep1()" style="width:100%;padding:12px;background:var(--line);color:var(--ink);border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;margin-top:8px">← 戻る</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // 星評価のイベント設定
+  setTimeout(() => {
+    initStarRatings();
+    initGooglePlacesAutocomplete();
+  }, 100);
+}
+
+function hidePostPage(){
+  const postPageContent = document.getElementById('post-page-content');
+  if(postPageContent) postPageContent.remove();
+}
+
+// ========== POST PAGE HELPERS ==========
+let currentSelectedStore = null;
+
+function proceedToStep2(){
+  if(!currentSelectedStore) {
+    alert('お店を選択してください');
+    return;
+  }
+  // 既存の proceedToPostForm モーダルに渡す（星・保存・完了画面が正しく動作する）
+  proceedToPostForm(currentSelectedStore.id);
+}
+
+function goBackToStep1(){
+  document.getElementById('postStep1').style.display = 'block';
+  document.getElementById('postStep2').style.display = 'none';
+}
+
+function selectStoreForPost(storeId){
+  const store = STORES.find(s => s.id === storeId);
+  if(!store) return;
+
+  currentSelectedStore = store;
+  // 店舗を選択したら即座に評価モーダルを開く
+  proceedToPostForm(storeId);
+}
+
+function useGPSForPost(){
+  if (!navigator.geolocation) {
+    alert('このブラウザは位置情報対応していません');
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const { latitude, longitude } = position.coords;
+
+      // 各店舗との距離を計算
+      const storesWithDistance = STORES.map(s => ({
+        ...s,
+        distance: calculateDistance(latitude, longitude, s.lat, s.lng)
+      })).sort((a, b) => a.distance - b.distance);
+
+      // 距離付きで表示
+      const listContainer = document.getElementById('storeListContainer');
+      listContainer.innerHTML = storesWithDistance.slice(0, 15).map(s =>
+        `<div style="padding:12px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:.2s" onmouseover="this.style.background='var(--mint-soft)'" onmouseout="this.style.background='#fff'" onclick="selectStoreForPost(${s.id})">
+          <div>
+            <div style="font-weight:700;color:var(--ink)">${s.name}</div>
+            <div style="font-size:11px;color:var(--muted)">${s.area}</div>
+          </div>
+          <div style="font-size:12px;color:var(--mint);font-weight:700">${s.distance.toFixed(1)}km</div>
+        </div>`
+      ).join('');
+    },
+    (error) => {
+      alert('位置情報の取得に失敗しました: ' + error.message);
+    }
+  );
+}
+
+function initStarRatings(){
+  // 投稿ページ内の星評価をクリック可能にする
+  const postForm = document.getElementById('postFormSubmit');
+  if(!postForm) return;
+
+  postForm.querySelectorAll('.stt b').forEach(star => {
+    star.style.cursor = 'pointer';
+    star.addEventListener('click', (e) => {
+      e.preventDefault();
+      const rating = parseInt(e.target.dataset.v);
+      const container = e.target.parentElement;
+
+      container.querySelectorAll('b').forEach((s, idx) => {
+        s.style.color = idx < rating ? 'var(--gold)' : '#d9e0dd';
+      });
+    });
+
+    // ホバーエフェクト
+    star.addEventListener('mouseover', (e) => {
+      const rating = parseInt(e.target.dataset.v);
+      const container = e.target.parentElement;
+      container.querySelectorAll('b').forEach((s, idx) => {
+        s.style.color = idx < rating ? 'var(--gold)' : '#d9e0dd';
+        s.style.opacity = '0.7';
+      });
+    });
+
+    star.addEventListener('mouseout', (e) => {
+      const container = e.target.parentElement;
+      container.querySelectorAll('b').forEach(s => {
+        s.style.opacity = '1';
+      });
+    });
+  });
+}
+
+// submitPost は上の function submitPost(e, shopId) に統一済み
+
+// ========== GOOGLE PLACES API ==========
+let placesService = null;
+let autocompleteService = null;
+
+function initializeGooglePlaces(){
+  if(window.google && google.maps) {
+    const dummyDiv = document.createElement('div');
+    placesService = new google.maps.places.PlacesService(dummyDiv);
+    autocompleteService = new google.maps.places.AutocompleteService();
+  }
+}
+
+function placeToStore(place, idx){
+  return {
+    id: Date.now() + idx,
+    name: place.name,
+    area: extractArea(place.vicinity || place.formatted_address || '') || '名古屋',
+    cat: '飲食店',
+    rank: 'bronze',
+    icon: '🍽️',
+    sc: { toilet: 0, air: 0, total: 0 }, // 実際の投稿から算出
+    kirei: 0,
+    tags: [],
+    lat: place.geometry.location.lat(),
+    lng: place.geometry.location.lng(),
+    x: 50, y: 50,
+    reviews: [],
+    placeId: place.place_id,
+    address: place.vicinity || ''
+  };
+}
+
+// 名古屋市全体をカバーする検索ポイント（各区の中心）
+const NAGOYA_SEARCH_POINTS = [
+  { lat: 35.1705, lng: 136.8819, name: '中区・栄' },
+  { lat: 35.1815, lng: 136.9064, name: '東区' },
+  { lat: 35.1500, lng: 136.9100, name: '千種区' },
+  { lat: 35.1950, lng: 136.8985, name: '北区' },
+  { lat: 35.1600, lng: 136.8500, name: '西区' },
+  { lat: 35.1400, lng: 136.8700, name: '中村区・名駅' },
+  { lat: 35.1200, lng: 136.9000, name: '昭和区' },
+  { lat: 35.1000, lng: 136.9200, name: '瑞穂区' },
+  { lat: 35.0900, lng: 136.8800, name: '熱田区' },
+  { lat: 35.1100, lng: 136.8500, name: '中川区' },
+];
+
+function loadRestaurantsFromAPI(){
+  // キャッシュをチェック（24時間以内なら再利用）
+  const cacheKey = 'kirein_restaurants_v2';
+  const cached = localStorage.getItem(cacheKey);
+  if(cached){
+    try{
+      const { stores, timestamp } = JSON.parse(cached);
+      const age = Date.now() - timestamp;
+      if(stores && stores.length > 0 && age < 24 * 60 * 60 * 1000){
+        STORES = stores;
+        console.log(`✅ キャッシュから${stores.length}店舗を復元`);
+        render();
+        return;
+      }
+    }catch(e){ console.log('キャッシュ読み込みエラー:', e); }
+  }
+
+  // キャッシュなし → Google Places API から取得
+  if(!placesService){
+    console.log('⚠️ Places Service 未初期化');
+    return;
+  }
+
+  console.log('📍 名古屋市全体の飲食店を取得中...');
+  STORES = [];
+  let remaining = NAGOYA_SEARCH_POINTS.length;
+
+  NAGOYA_SEARCH_POINTS.forEach(point => {
+    placesService.nearbySearch({
+      location: { lat: point.lat, lng: point.lng },
+      radius: 1500,
+      type: 'restaurant',
+      language: 'ja'
+    }, (results, status) => {
+      if(status === google.maps.places.PlacesServiceStatus.OK && results){
+        results.forEach((place, idx) => {
+          // 重複チェック
+          if(!STORES.find(s => s.placeId === place.place_id)){
+            STORES.push(placeToStore(place, STORES.length));
+          }
+        });
+        console.log(`✅ ${point.name}: ${results.length}件取得（累計:${STORES.length}件）`);
+      }
+      remaining--;
+      if(remaining === 0){
+        // 全エリア取得完了 → キャッシュに保存
+        localStorage.setItem(cacheKey, JSON.stringify({ stores: STORES, timestamp: Date.now() }));
+        console.log(`🎉 名古屋市全体 ${STORES.length}店舗の取得完了！`);
+        render();
+      }
+    });
+  });
+}
+
+// 旧キャッシュを削除
+localStorage.removeItem('kirein_restaurants_cache');
+
+// ダミー（削除対象だったコード残骸）
+function _legacyNearbySearch(results, status){
+  if(status === google.maps.places.PlacesServiceStatus.OK && results) {
+    const newStores = results.slice(0, 100).map((place, idx) => ({
+      id: STORES.length + idx + 1,
+      name: place.name,
+      area: '名古屋中区',
+      cat: '飲食店',
+      rank: 'bronze',
+      icon: place.icon || '🍽️',
+      sc: { toilet: 3.5, air: 3.5, total: 3.5 },
+      kirei: 0,
+      tags: place.types || [],
+      lat: place.geometry.location.lat(),
+      lng: place.geometry.location.lng(),
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      reviews: place.reviews || [],
+      placeId: place.place_id,
+      rating: place.rating || 3.5,
+      openingHours: place.opening_hours || null
+      }));
+  }
+}
+
+window.addEventListener('hashchange', handleRoute);
+document.addEventListener('DOMContentLoaded', () => {
+  initializeGooglePlaces(); // Places Service を初期化
+  loadRestaurantsFromAPI(); // 飲食店データを読み込み
+  updateUIForLogin();
+  handleRoute();
+});
+
+// ダミーデータ削除済み。実在店舗のみ Google Places API から取得
+let STORES = [];
+const _REMOVED = [
+  {id:1,name:"矢場とん 栄本店",area:"栄",cat:"レストラン",rank:"platinum",icon:"🥩",sc:{toilet:4.9,air:4.8,total:4.9},kirei:280,tags:["名古屋グルメ","高級感","無臭"],x:56,y:38,reviews:[{n:"田中",s:5,t:"先週",p:"名古屋の味噌カツの元祖。清潔で雰囲気も最高。"},{n:"佐藤",s:5,t:"先月",p:"待つ価値あり。トイレも非常に清潔です。"}]},
+  {id:2,name:"ひつまぶし 備長 栄店",area:"栄",cat:"レストラン",rank:"platinum",icon:"🍱",sc:{toilet:4.8,air:4.7,total:4.8},kirei:250,tags:["名古屋グルメ","高級感","女性に人気"],x:58,y:40,reviews:[{n:"鈴木",s:5,t:"先週",p:"ひつまぶしの名店。職人の技と清潔さが両立。"}]},
+  {id:3,name:"風来坊 栄店",area:"栄",cat:"居酒屋",rank:"silver",icon:"🍗",sc:{toilet:4.6,air:4.5,total:4.6},kirei:210,tags:["名古屋グルメ","無臭","禁煙"],x:54,y:42,reviews:[{n:"山田",s:4,t:"2週間前",p:"手羽先が名物。グルメ好きに人気。トイレも清潔。"}]},
+  {id:4,name:"味仙 大須本店",area:"栄",cat:"レストラン",rank:"silver",icon:"🍜",sc:{toilet:4.5,air:4.6,total:4.5},kirei:190,tags:["名古屋グルメ","禁煙","リーズナブル"],x:52,y:36,reviews:[{n:"渡辺",s:4,t:"先月",p:"台湾ラーメンの発祥店。清潔で本格的な味。"}]},
+  {id:5,name:"肉ときどきレモンサワー 栄住吉店",area:"栄",cat:"居酒屋",rank:"silver",icon:"🍶",sc:{toilet:4.7,air:4.7,total:4.7},kirei:220,tags:["宴会向き","無臭","リーズナブル"],x:55,y:39,reviews:[{n:"加藤",s:5,t:"先週",p:"コスパ最高。若い世代から人気。トイレも清潔。"}]},
+  {id:6,name:"世界の山ちゃん 栄店",area:"栄",cat:"居酒屋",rank:"bronze",icon:"🍗",sc:{toilet:4.3,air:4.2,total:4.3},kirei:160,tags:["名古屋グルメ","禁煙","リーズナブル"],x:53,y:41,reviews:[{n:"中村",s:4,t:"先月",p:"手羽先のチェーン店。安くて美味しい。"}]},
+  {id:7,name:"串かつラブリー 栄店",area:"栄",cat:"居酒屋",rank:"bronze",icon:"🍖",sc:{toilet:4.2,air:4.1,total:4.2},kirei:140,tags:["禁煙","リーズナブル","宴会向き"],x:57,y:37,reviews:[{n:"林",s:4,t:"先週",p:"串かつ1本100円。人気で常に混んでます。"}]},
+  {id:8,name:"鳥開 栄本店",area:"栄",cat:"焼鳥",rank:"silver",icon:"🐔",sc:{toilet:4.4,air:4.3,total:4.4},kirei:175,tags:["高級感","無臭","宴会向き"],x:55,y:43,reviews:[{n:"小林",s:4,t:"先月",p:"焼鳥の名店。上質な食材と清潔な環境。"}]},
+  {id:9,name:"あんかけスパ 栄店",area:"栄",cat:"レストラン",rank:"bronze",icon:"🍝",sc:{toilet:4.1,air:4.0,total:4.1},kirei:120,tags:["名古屋グルメ","子ども安心","禁煙"],x:59,y:38,reviews:[{n:"吉田",s:3,t:"先週",p:"名古屋独特の あんかけスパ。個性的な味。"}]},
+  {id:10,name:"豆味噌 栄店",area:"栄",cat:"居酒屋",rank:"silver",icon:"🍲",sc:{toilet:4.5,air:4.4,total:4.5},kirei:165,tags:["名古屋グルメ","禁煙","女性に人気"],x:56,y:35,reviews:[{n:"鈴木",s:4,t:"2週間前",p:"味噌煮込みうどんが人気。清潔で落ち着いた雰囲気。"}]},
+  {id:11,name:"大和屋 栄店",area:"栄",cat:"レストラン",rank:"platinum",icon:"🍣",sc:{toilet:4.8,air:4.8,total:4.8},kirei:240,tags:["高級感","無臭","接客◎"],x:54,y:44,reviews:[{n:"石田",s:5,t:"先週",p:"寿司の名店。ネタの質と清潔さが一級品。"}]},
+  {id:12,name:"天ぷら 甚六",area:"栄",cat:"レストラン",rank:"silver",icon:"🍤",sc:{toilet:4.5,air:4.6,total:4.5},kirei:180,tags:["高級感","女性に人気","おもてなし"],x:57,y:41,reviews:[{n:"渡辺",s:4,t:"先月",p:"揚げたての天ぷら。パウダールームが特に綺麗。"}]},
+  {id:13,name:"焼肉 丸太",area:"栄",cat:"焼肉",rank:"platinum",icon:"🥓",sc:{toilet:4.7,air:4.8,total:4.8},kirei:220,tags:["高級感","無臭","デート向き"],x:52,y:45,reviews:[{n:"池田",s:5,t:"先週",p:"本格焼肉で清潔。デートに最適な空間。"}]},
+  {id:14,name:"鍋料理 京都",area:"栄",cat:"レストラン",rank:"silver",icon:"🍲",sc:{toilet:4.4,air:4.5,total:4.4},kirei:155,tags:["宴会向き","禁煙","女性に人気"],x:51,y:39,reviews:[{n:"山田",s:4,t:"先月",p:"各種鍋が充実。グループで楽しめます。"}]},
+  {id:15,name:"個室居酒屋 SHIN",area:"栄",cat:"居酒屋",rank:"silver",icon:"🍶",sc:{toilet:4.6,air:4.7,total:4.6},kirei:200,tags:["高級感","無臭","個室"],x:55,y:37,reviews:[{n:"田中",s:5,t:"先週",p:"個室で落ち着いて。トイレも含めて綺麗。"}]},
+  {id:16,name:"海鮮 日本橋",area:"栄",cat:"レストラン",rank:"silver",icon:"🦞",sc:{toilet:4.5,air:4.6,total:4.5},kirei:190,tags:["高級感","無臭","女性に人気"],x:53,y:40,reviews:[{n:"鈴木",s:4,t:"先月",p:"新鮮な海の幸。清潔で優雅な空間。"}]},
+  {id:17,name:"ステーキハウス 栄",area:"栄",cat:"レストラン",rank:"platinum",icon:"🥩",sc:{toilet:4.9,air:4.9,total:4.9},kirei:260,tags:["高級感","無臭","接客◎"],x:58,y:42,reviews:[{n:"清水",s:5,t:"先週",p:"最高級のステーキ。トイレも5つ星です。"}]},
+  {id:18,name:"つけ麺 翔",area:"栄",cat:"レストラン",rank:"bronze",icon:"🍜",sc:{toilet:4.1,air:4.0,total:4.1},kirei:100,tags:["禁煙","子ども安心","リーズナブル"],x:60,y:36,reviews:[{n:"佐々木",s:3,t:"先月",p:"濃厚なつけ汁が人気。若者の溜まり場。"}]},
+  {id:19,name:"うなぎ 高住",area:"栄",cat:"レストラン",rank:"silver",icon:"🍱",sc:{toilet:4.4,air:4.5,total:4.4},kirei:170,tags:["高級感","禁煙","おもてなし"],x:54,y:46,reviews:[{n:"野呂",s:4,t:"2週間前",p:"上質なうなぎ。清潔で職人の技が光ります。"}]},
+  {id:20,name:"居酒屋 竹の君",area:"栄",cat:"居酒屋",rank:"silver",icon:"🍶",sc:{toilet:4.5,air:4.6,total:4.5},kirei:185,tags:["宴会向き","無臭","リーズナブル"],x:56,y:44,reviews:[{n:"馬場",s:4,t:"先月",p:"常連多い。雰囲気も良く清潔です。"}]},
+  {id:21,name:"すしの青山",area:"栄",cat:"レストラン",rank:"platinum",icon:"🍣",sc:{toilet:4.8,air:4.8,total:4.8},kirei:230,tags:["高級感","無臭","接客◎"],x:52,y:37,reviews:[{n:"後藤",s:5,t:"先週",p:"カウンター寿司の名店。清潔で楽しめます。"}]},
+  {id:22,name:"もつ鍋 黒田屋",area:"栄",cat:"居酒屋",rank:"silver",icon:"🍲",sc:{toilet:4.4,air:4.5,total:4.4},kirei:160,tags:["名古屋グルメ","禁煙","宴会向き"],x:59,y:39,reviews:[{n:"池田",s:4,t:"先月",p:"熱々のもつ鍋。トイレも常にキレイです。"}]},
+  {id:23,name:"串焼き 太郎",area:"栄",cat:"焼鳥",rank:"bronze",icon:"🍖",sc:{toilet:4.2,air:4.1,total:4.2},kirei:130,tags:["禁煙","リーズナブル","宴会向き"],x:51,y:43,reviews:[{n:"尾崎",s:3,t:"先週",p:"安くて美味しい焼き鳥。人気です。"}]},
+  {id:24,name:"フレンチ シャルム",area:"栄",cat:"レストラン",rank:"silver",icon:"🍷",sc:{toilet:4.6,air:4.7,total:4.6},kirei:200,tags:["高級感","女性に人気","デート向き"],x:57,y:45,reviews:[{n:"三浦",s:4,t:"先月",p:"本格フレンチ。清潔で上質な空間。"}]},
+  {id:25,name:"天ぷら 福太郎",area:"栄",cat:"レストラン",rank:"silver",icon:"🍤",sc:{toilet:4.5,air:4.6,total:4.5},kirei:175,tags:["高級感","禁煙","女性に人気"],x:53,y:48,reviews:[{n:"福田",s:4,t:"先週",p:"揚げたての天ぷら。落ち着いた雰囲気で清潔。"}]},
+  {id:26,name:"焼肉 一心",area:"栄",cat:"焼肉",rank:"silver",icon:"🥓",sc:{toilet:4.6,air:4.6,total:4.6},kirei:195,tags:["高級感","無臭","デート向き"],x:54,y:34,reviews:[{n:"清水",s:4,t:"先週",p:"上質な焼肉。デートに最適です。"}]},
+  {id:27,name:"味噌ラーメン 栄",area:"栄",cat:"レストラン",rank:"bronze",icon:"🍜",sc:{toilet:4.1,air:4.0,total:4.1},kirei:105,tags:["禁煙","リーズナブル","名古屋グルメ"],x:60,y:40,reviews:[{n:"佐々木",s:3,t:"先月",p:"名古屋の味噌ラーメン。親しみやすい雰囲気。"}]},
+  {id:28,name:"海中料理 東京",area:"栄",cat:"レストラン",rank:"platinum",icon:"🦞",sc:{toilet:4.8,air:4.8,total:4.8},kirei:235,tags:["高級感","無臭","おもてなし"],x:51,y:41,reviews:[{n:"中西",s:5,t:"先週",p:"新鮮な海の幸を堪能。おもてなしも完璧。"}]},
+  {id:29,name:"豆腐料理 やまと",area:"栄",cat:"レストラン",rank:"silver",icon:"🥢",sc:{toilet:4.4,air:4.5,total:4.4},kirei:145,tags:["禁煙","子ども安心","ヘルシー"],x:56,y:46,reviews:[{n:"丸田",s:4,t:"先月",p:"ヘルシーで美味しい豆腐料理。女性に好評。"}]},
+  {id:30,name:"名古屋コーチン 鶏三郎",area:"栄",cat:"焼鳥",rank:"platinum",icon:"🐔",sc:{toilet:4.9,air:4.8,total:4.9},kirei:270,tags:["高級感","無臭","名古屋グルメ"],x:55,y:32,reviews:[{n:"平野",s:5,t:"先週",p:"名古屋コーチン専門店。品質と清潔さは一級品。"}]},
+]; // _REMOVED 終了
+const ATTRS=["無臭","女性に人気","子ども安心","高級感","デート向き","禁煙"];
+const RANKORDER={black:4,platinum:3,gold:2,silver:1};
+const RANKLBL={black:"Lv.4",platinum:"Lv.3",gold:"Lv.2",silver:"Lv.1"};
+const RANKCHAR={black:"4",platinum:"3",gold:"2",silver:"1"};
+const RANKDESC={black:"毎日プロが守るプレミアム",platinum:"わざわざ使いたい",gold:"気持ちよく使える",silver:"ためらわず使える"};
+const activeAttrs=new Set();
+
+// populate selects + chips
+const areaSel=document.getElementById('area'),catSel=document.getElementById('cat');
+[...new Set(STORES.map(s=>s.area))].forEach(a=>areaSel.add(new Option(a,a)));
+[...new Set(STORES.map(s=>s.cat))].forEach(c=>catSel.add(new Option(c,c)));
+const chipBox=document.getElementById('chips');
+ATTRS.forEach(a=>{
+  const b=document.createElement('button');b.className='chip';b.textContent=a;
+  b.onclick=()=>{b.classList.toggle('on');activeAttrs.has(a)?activeAttrs.delete(a):activeAttrs.add(a);render();};
+  chipBox.appendChild(b);
+});
+
+const star=n=>'★'.repeat(Math.round(n))+'☆'.repeat(5-Math.round(n));
+
+function filtered(){
+  const q=document.getElementById('q').value.trim();
+  const ar=areaSel.value,ct=catSel.value,sort=document.getElementById('sort').value;
+  let r=STORES.filter(s=>
+    (!q||s.name.includes(q)||s.area.includes(q)||s.cat.includes(q)||s.tags.some(t=>t.includes(q)))&&
+    (!ar||s.area===ar)&&(!ct||s.cat===ct)&&
+    [...activeAttrs].every(a=>s.tags.includes(a))
+  );
+  r.sort((a,b)=> sort==='kirei'? b.kirei-a.kirei : sort==='rank'? RANKORDER[b.rank]-RANKORDER[a.rank] : b.sc.total-a.sc.total);
+  return r;
+}
+
+function getKireinPosts(shopId){
+  // このお店の Kirein 投稿を取得
+  return getPosts().filter(p => p.shop_id === shopId);
+}
+
+function calcScore(shopId){
+  const posts = getKireinPosts(shopId);
+  if(!posts.length) return null;
+  const avg = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
+  return {
+    toilet: avg(posts.map(p=>p.cleanliness_rating||0)),
+    air:    avg(posts.map(p=>p.air_rating||0)),
+    total:  avg(posts.map(p=>((p.cleanliness_rating||0)+(p.air_rating||0))/2)),
+    count:  posts.length
+  };
+}
+
+function render(){
+  if(!document.getElementById('cnt')) return; // 探すページ以外では不要
+  const r = filtered();
+  document.getElementById('cnt').textContent = r.length;
+  const list = document.getElementById('list');
+  if(!r.length){
+    list.innerHTML = `<div class=”empty”>条件に合うお店が見つかりませんでした。<br>絞り込みを減らしてみてください。</div>`;
+    renderPins([]);
+    return;
+  }
+
+  list.innerHTML = r.map(s => {
+    const score = calcScore(s.id);
+    const hasScore = score !== null;
+
+    const scoreHtml = hasScore ? `
+      <div class=”scores”>
+        <div class=”sc”>トイレ清潔<b>${score.toilet.toFixed(1)}<span class=”star”>★</span></b></div>
+        <div class=”sc”>空気・無臭<b>${score.air.toFixed(1)}<span class=”star”>★</span></b></div>
+        <div class=”sc”>総合<b>${score.total.toFixed(1)}<span class=”star”>★</span></b></div>
+      </div>
+      <div class=”kirei”>👍 <b>${score.count}</b> 件の投稿</div>
+    ` : `
+      <div style=”margin-top:10px;font-size:12px;color:var(--muted);padding:8px;background:var(--bg-soft);border-radius:8px”>
+        📝 まだ評価がありません。最初の投稿者になりませんか？
+      </div>
+    `;
+
+    const firstReview = s.reviews && s.reviews.length > 0 ? s.reviews[0] : null;
+    const quoteHtml = firstReview
+      ? `<div class=”quote”>”${firstReview.p || firstReview}”</div>`
+      : '';
+
+    return `
+    <div class=”card” data-id=”${s.id}” onclick=”openModal(${s.id})”
+         onmouseenter=”hl(${s.id},true)” onmouseleave=”hl(${s.id},false)”>
+      <div class=”thumb”>
+        <span class=”rankbadge ${hasScore ? 'm-'+s.rank : ''}” style=”${hasScore?'':'background:#ccc'}”>
+          ${hasScore ? (RANKCHAR[s.rank]||'?') : '?'}
+        </span>
+        ${s.icon||'🍽️'}
+      </div>
+      <div class=”body”>
+        <div class=”top”>
+          <div><div class=”name”>${s.name}</div><div class=”meta”>${s.area}・${s.cat}</div></div>
+          ${hasScore ? `<span class=”cert ${s.rank}”>✦ ${RANKLBL[s.rank]||''}</span>` : '<span style=”font-size:11px;color:var(--muted);padding:4px 8px;background:var(--bg-soft);border-radius:6px”>未評価</span>'}
+        </div>
+        ${scoreHtml}
+        ${quoteHtml}
+        <button style=”margin-top:8px;width:100%;padding:6px;background:var(--mint);color:#062019;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer” onclick=”event.stopPropagation();window.location.hash='/post';setTimeout(()=>selectStoreForPost(${s.id}),300)”>
+          🚻 このお店を評価する +${getCampaignMultiplier()*50}pt
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+
+  renderPins(r);
+}
+
+function renderPins(r){
+  if(!window.gmap) return;
+  if(!Array.isArray(r)) r = STORES;
+  window.markers?.forEach(m=>m.setMap(null));
+  window.markers = [];
+  r.forEach(s=>{
+    // 実際の lat/lng を使用（Google Places API の座標）
+    const lat = s.lat || 35.1705;
+    const lng = s.lng || 136.8819;
+    const marker = new google.maps.Marker({
+      position: {lat, lng}, map: window.gmap, title: s.name,
+      icon: `http://maps.google.com/mapfiles/ms/icons/${s.rank==='platinum'?'yellow':{silver:'blue',bronze:'orange',black:'red'}[s.rank]||'red'}-dot.png`
+    });
+    marker.addListener('click', ()=>{
+      const c = document.querySelector(`.card[data-id="${s.id}"]`);
+      c && c.scrollIntoView({behavior:'smooth',block:'center'});
+      openModal(s.id);
+    });
+    window.markers.push(marker);
+  });
+}
+
+function hl(id,on){
+  document.querySelector(`.card[data-id="${id}"]`)?.classList.toggle('active',on);
+  document.querySelector(`.pin[data-id="${id}"]`)?.classList.toggle('active',on);
+}
+
+function openModal(id){
+  const s=STORES.find(x=>x.id===id);
+  document.getElementById('modal').innerHTML=`
+    <div class="mhead">
+      <button class="close" onclick="closeModal()">×</button>
+      <span class="mcert cert ${s.rank}">✦ キレイン認証 ${RANKLBL[s.rank]}｜${RANKDESC[s.rank]}</span>
+      <h3>${s.name}</h3>
+      <div class="mmeta">${s.area}・${s.cat}　|　👍 ${s.kirei} 人が「きれい！」</div>
+    </div>
+    <div class="mbody">
+      <div class="scoregrid">
+        <div class="b"><small>トイレ清潔</small><b>${s.sc.toilet.toFixed(1)}</b></div>
+        <div class="b"><small>空気・無臭</small><b>${s.sc.air.toFixed(1)}</b></div>
+        <div class="b"><small>総合</small><b>${s.sc.total.toFixed(1)}</b></div>
+      </div>
+      <div class="tags" style="margin-bottom:6px">${s.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+
+      <div class="msec-t">利用者のおすすめ</div>
+      <div class="reviews">
+        ${s.reviews.map(rv=>`<div class="rv"><div class="rt"><span>${rv.n}</span><span>${rv.t}</span></div><div class="rs">${star(rv.s)}</div><p>${rv.p}</p></div>`).join('')}
+      </div>
+
+      <div class="msec-t">このお店をおすすめする</div>
+      <button class="btn mint" style="width:100%" onclick="closeModal();showPostModal()">ここから投稿する（ポイント獲得）→</button>
+      <div class="note" style="margin-top:12px">💡 ログインして投稿するとポイント獲得！Lv.1レポーターを目指して1件¥1,000の報告書報酬の調査員も夢じゃない。</div>
+    </div>`;
+  document.getElementById('overlay').classList.add('open');
+}
+function closeModal(){document.getElementById('overlay').classList.remove('open');}
+// submitReview は submitPost で置き換え済み
+
+// Google Maps 初期化
+const sakaeCenter = {lat: 35.1705, lng: 136.8819};
+window.gmap = new google.maps.Map(document.getElementById('map'), {
+  zoom: 15,
+  center: sakaeCenter,
+  mapTypeId: google.maps.MapTypeId.ROADMAP
+});
+
+window.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+render();
+</script>
+</body>
+</html>
