@@ -574,11 +574,21 @@ function initGooglePlacesAutocomplete(){
           (predictions, status) => {
             if(status === google.maps.places.PlacesServiceStatus.OK && predictions) {
               const resultsDiv = document.getElementById('autocompleteResults');
-              resultsDiv.innerHTML = predictions.slice(0, 8).map((pred, idx) =>
-                `<div style="padding:10px;border-bottom:1px solid var(--line);cursor:pointer;font-size:12px;transition:.2s;background:#f9f9f9" onmouseover="this.style.background='var(--mint-soft)'" onmouseout="this.style.background='#f9f9f9'" onclick="selectGooglePlace('${pred.place_id}', '${pred.main_text.replace(/'/g, "\\'")}')">${pred.main_text}<br><span style="color:var(--muted);font-size:11px">${pred.secondary_text || ''}</span></div>`
-              ).join('');
+              resultsDiv.innerHTML = predictions.slice(0, 8).map(pred => {
+                // structured_formatting が正しいフィールド名
+                const name    = pred.structured_formatting?.main_text      || pred.description || '不明';
+                const address = pred.structured_formatting?.secondary_text || '';
+                const safeName = name.replace(/'/g, '&#39;');
+                return `<div style="padding:10px;border-bottom:1px solid var(--line);cursor:pointer;font-size:13px;transition:.2s;background:#f9f9f9"
+                  onmouseover="this.style.background='var(--mint-soft)'"
+                  onmouseout="this.style.background='#f9f9f9'"
+                  onclick="selectGooglePlace('${pred.place_id}', '${safeName}')">
+                  <div style="font-weight:600;color:var(--ink)">${name}</div>
+                  <div style="color:var(--muted);font-size:11px;margin-top:2px">${address}</div>
+                </div>`;
+              }).join('');
               resultsDiv.style.display = 'block';
-              console.log('✅ Google Places API 検索結果:', predictions.length, '件');
+              console.log('✅ Google Places 検索結果:', predictions.length, '件');
             } else {
               console.log('⚠️ Places API エラー:', status);
             }
