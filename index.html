@@ -107,11 +107,8 @@
   }
 
   function fallbackNicknameLogin(){
-    const nickname = prompt('ニックネームを入力してください（例：名古屋のタナカさん）');
-    if(nickname && nickname.trim()){
-      getOrCreateUser(nickname.trim());
-      updateUIForLogin();
-    }
+    // Chrome がプロンプトをブロックするのでモーダルで入力
+    document.getElementById('nicknameModal').style.display = 'flex';
   }
 </script>
 <style>
@@ -477,6 +474,29 @@
   </div>
 </footer>
 
+<!-- ニックネーム入力モーダル -->
+<div id="nicknameModal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(8,20,17,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:20px;padding:32px;width:min(420px,90vw);box-shadow:0 24px 60px -20px rgba(0,0,0,.4)">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:36px;margin-bottom:10px">🚻</div>
+      <h3 style="font-size:20px;color:var(--pine);margin-bottom:8px">キレインへようこそ！</h3>
+      <p style="font-size:13px;color:var(--muted)">ニックネームを設定してください<br>投稿時に表示されません（匿名）</p>
+    </div>
+    <input type="text" id="nicknameInput" placeholder="例：名古屋のタナカさん"
+      style="width:100%;padding:12px;border:2px solid var(--line);border-radius:10px;font-family:inherit;font-size:14px;margin-bottom:16px;outline:none"
+      onfocus="this.style.borderColor='var(--mint)'"
+      onblur="this.style.borderColor='var(--line)'"
+      onkeydown="if(event.key==='Enter')submitNickname()">
+    <button onclick="submitNickname()" style="width:100%;padding:13px;background:var(--mint);color:#062019;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit">
+      はじめる →
+    </button>
+    <div style="text-align:center;margin-top:12px">
+      <button onclick="document.getElementById('nicknameModal').style.display='none'"
+        style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;font-family:inherit">キャンセル</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL -->
 <div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
   <div class="modal" id="modal"></div>
@@ -637,6 +657,18 @@ function updateUIForLogin(){
       userLink.innerHTML = `<span class="user-badge">${user.nickname} <span class="lv lv${user.current_lv}">Lv.${user.current_lv}</span></span>`;
     }
   }
+}
+
+function submitNickname(){
+  const nickname = document.getElementById('nicknameInput').value.trim();
+  if(!nickname){
+    document.getElementById('nicknameInput').style.borderColor = '#f05';
+    return;
+  }
+  getOrCreateUser(nickname);
+  updateUIForLogin();
+  document.getElementById('nicknameModal').style.display = 'none';
+  document.getElementById('nicknameInput').value = '';
 }
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -1214,11 +1246,8 @@ function submitPost(e, shopId){
   try {
     let user = getUserData();
     if(!user){
-      // ログインしていない場合はここでニックネームを入力してもらう
-      const nickname = prompt('はじめてご利用ですか？\nニックネームを入力してください（例：名古屋のタナカさん）');
-      if(!nickname || !nickname.trim()){ return; }
-      user = getOrCreateUser(nickname.trim());
-      updateUIForLogin();
+      document.getElementById('nicknameModal').style.display = 'flex';
+      return;
     }
 
     const form = e.target;
@@ -1401,15 +1430,14 @@ function showSearchPage(){
 }
 
 function showPostPage(){
-  // 未ログインの場合はニックネームを先に入力してもらう
+  // 未ログインの場合はニックネームモーダルを表示
   if(!getUserData()){
-    const nickname = prompt('キレインへようこそ！\nニックネームを入力してください（例：名古屋のタナカさん）');
-    if(!nickname || !nickname.trim()){
-      window.location.hash = '/';
-      return;
-    }
-    getOrCreateUser(nickname.trim());
-    updateUIForLogin();
+    document.getElementById('nicknameModal').style.display = 'flex';
+    // ログイン後に投稿ページに戻る
+    document.getElementById('nicknameInput').onkeydown = (e) => {
+      if(e.key === 'Enter') { submitNickname(); showPostPage(); }
+    };
+    return;
   }
 
   // 投稿ページ（フルスクリーン）を表示
