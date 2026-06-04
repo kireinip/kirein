@@ -1095,51 +1095,143 @@ function selectStoreForPost(storeId){
 
 async function searchNearbyRestaurants(){
   const listContainer = document.getElementById('storeListContainer');
-  listContainer.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px">📍 現在地を取得中...</div>';
+  listContainer.innerHTML = `
+    <div style="text-align:center;padding:28px;color:var(--muted);font-size:13px">
+      <div style="font-size:28px;margin-bottom:10px">📍</div>
+      現在地を取得中...<br>
+      <span style="font-size:11px">精度を高めるため少しお待ちください</span>
+    </div>`;
 
-  const loc = await getUserLocation();
+  // 高精度GPSで現在地を取得
+  const loc = await getHighAccuracyLocation();
   if(!loc){
-    listContainer.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">位置情報の許可が必要です。ブラウザの設定を確認してください。</div>';
+    listContainer.innerHTML = `
+      <div style="text-align:center;padding:24px">
+        <div style="font-size:28px;margin-bottom:10px">🚫</div>
+        <div style="color:var(--ink);font-weight:700;margin-bottom:8px">位置情報を取得できませんでした</div>
+        <div style="color:var(--muted);font-size:12px">ブラウザの設定で位置情報を許可してください</div>
+      </div>`;
     return;
   }
 
-  listContainer.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px">🗺️ 近くのお店を検索中...</div>';
+  console.log(`📍 現在地取得: 精度 ±${loc.accuracy}m`);
+  listContainer.innerHTML = `
+    <div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">
+      🗺️ 半径50m以内を検索中...
+    </div>`;
 
-  // まず STORES から近い順に表示（即座）
-  const nearbyFromStores = STORES
-    .map(s => ({ ...s, dist: calculateDistance(loc.lat, loc.lng, s.lat||35.17, s.lng||136.88) }))
-    .sort((a,b) => a.dist - b.dist)
-    .slice(0, 10);
+  // 段階的に半径を広げて検索
+  searchWithExpandingRadius(loc, [50, 100, 200, 500], listContainer);
+}
 
-  renderNearbyList(nearbyFromStores);
+function getHighAccuracyLocation(){
+  return new Promise((resolve) => {
+    if(!navigator.geolocation){ resolve(null); return; }
 
-  // Google Places Nearby Search で追加取得
-  if(!placesService || !window.google) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const loc = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: Math.round(pos.coords.accuracy)
+        };
+        userLocation = loc;
+        resolve(loc);
+      },
+      () => resolve(null),
+      {
+        enableHighAccuracy: true, // 高精度GPS
+        timeout: 10000,
+        maximumAge: 0            // キャッシュ不使用（最新の位置情報）
+      }
+    );
+  });
+}
+
+function searchWithExpandingRadius(loc, radii, listContainer){
+  const radius = radii[0];
+  const remaining = radii.slice(1);
+
+  if(!placesService || !window.google){
+    // Places API なし → キャッシュから距離順
+    const fallback = STORES
+      .map(s => ({...s, dist: calculateDistance(loc.lat, loc.lng, s.lat||35.17, s.lng||136.88)}))
+      .filter(s => s.dist * 1000 <= 500)
+      .sort((a,b) => a.dist - b.dist);
+    renderNearbyList(fallback, loc, 500, listContainer);
+    return;
+  }
 
   placesService.nearbySearch({
-    location: loc,
-    radius: 500, // 500m 以内
+    location: { lat: loc.lat, lng: loc.lng },
+    radius: radius,
     type: 'restaurant',
     language: 'ja'
   }, (results, status) => {
-    if(status !== google.maps.places.PlacesServiceStatus.OK || !results) return;
 
-    // 新しい店舗を STORES に追加
-    results.forEach((place, idx) => {
-      if(!STORES.find(s => s.placeId === place.place_id)){
-        STORES.push(placeToStore(place, STORES.length));
-      }
-    });
+    if(status === google.maps.places.PlacesServiceStatus.OK && results && results.length > 0){
+      // 結果あり → 距離付きで表示
+      const stores = results.map((place, idx) => {
+        // STORES に未登録なら追加
+        let store = STORES.find(s => s.placeId === place.place_id);
+        if(!store){
+          store = placeToStore(place, STORES.length);
+          STORES.push(store);
+        }
+        return {
+          ...store,
+          dist: calculateDistance(loc.lat, loc.lng, place.geometry.location.lat(), place.geometry.location.lng())
+        };
+      }).sort((a,b) => a.dist - b.dist);
 
-    // 再度距離計算して表示更新
-    const updated = STORES
-      .map(s => ({ ...s, dist: calculateDistance(loc.lat, loc.lng, s.lat||35.17, s.lng||136.88) }))
-      .sort((a,b) => a.dist - b.dist)
-      .slice(0, 20);
+      renderNearbyList(stores, loc, radius, listContainer);
 
-    renderNearbyList(updated);
-    console.log('✅ 近隣検索完了:', updated.length, '件');
+    } else if(remaining.length > 0){
+      // 結果なし → 半径を広げて再検索
+      const nextRadius = remaining[0];
+      listContainer.innerHTML = `
+        <div style="text-align:center;padding:16px;color:var(--muted);font-size:12px">
+          ${radius}m以内に見つからず... 半径${nextRadius}mで再検索中
+        </div>`;
+      setTimeout(() => searchWithExpandingRadius(loc, remaining, listContainer), 500);
+
+    } else {
+      // 500mでも見つからない
+      listContainer.innerHTML = `
+        <div style="text-align:center;padding:24px">
+          <div style="font-size:28px;margin-bottom:10px">🔍</div>
+          <div style="color:var(--ink);font-weight:700;margin-bottom:8px">近くにお店が見つかりませんでした</div>
+          <div style="color:var(--muted);font-size:12px;margin-bottom:16px">店名で検索するか、手動で入力してください</div>
+        </div>`;
+    }
   });
+}
+
+function renderNearbyList(stores, loc, radius, container){
+  const el = container || document.getElementById('storeListContainer');
+  if(!stores.length){
+    el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">近くのお店が見つかりませんでした</div>`;
+    return;
+  }
+
+  const radiusLabel = radius ? `<div style="font-size:11px;color:var(--muted);margin-bottom:10px;text-align:center">📍 現在地から半径 ${radius}m 以内 (${stores.length}件)</div>` : '';
+
+  el.innerHTML = radiusLabel + stores.map(s => {
+    const dm = Math.round((s.dist||0) * 1000);
+    const distLabel = dm < 1000 ? `${dm}m` : `${(dm/1000).toFixed(1)}km`;
+    const distColor = dm < 100 ? '#25b598' : dm < 300 ? '#f0a500' : '#5d6b66';
+    return `
+    <div style="padding:12px 14px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:#fff;transition:.18s"
+         onmouseover="this.style.background='var(--mint-soft)';this.style.borderColor='var(--mint)'"
+         onmouseout="this.style.background='#fff';this.style.borderColor='var(--line)'"
+         onclick="selectStoreForPost(${s.id})">
+      <div style="min-width:0">
+        <div style="font-weight:700;color:var(--ink);font-size:14px">${s.name}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${s.address || s.area || ''}</div>
+      </div>
+      <div style="font-size:14px;font-weight:700;color:${distColor};flex-shrink:0;margin-left:12px">${distLabel}</div>
+    </div>`;
+  }).join('');
 }
 
 function renderNearbyList(stores){
