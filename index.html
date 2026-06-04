@@ -10,9 +10,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@600;700&family=Cormorant+Garamond:wght@600&display=swap" rel="stylesheet" />
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDRfloVijkhdUhF9v_DG7O3JV17Fqd9V7w&libraries=places"></script>
 
-<!-- Firebase SDK (compat版 - 既存コードと干渉しない) -->
+<!-- Firebase SDK (compat版) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script>
   const firebaseConfig = {
     apiKey: "AIzaSyBmd6J3uyIEkyybGVLlMR5_p9LLiHZQk3U",
@@ -25,11 +26,83 @@
 
   try {
     firebase.initializeApp(firebaseConfig);
-    window.db = firebase.firestore();
+    window.db   = firebase.firestore();
+    window.auth = firebase.auth();
+
+    // ログイン状態を監視
+    window.auth.onAuthStateChanged(async (firebaseUser) => {
+      if(firebaseUser){
+        // Googleログイン成功 → ユーザーデータを作成/更新
+        let user = getUserData();
+        if(!user || user.uid !== firebaseUser.uid){
+          user = {
+            uid:          firebaseUser.uid,
+            nickname:     firebaseUser.displayName || firebaseUser.email.split('@')[0],
+            email:        firebaseUser.email,
+            photo:        firebaseUser.photoURL,
+            total_points: user?.total_points || 0,
+            current_lv:   user?.current_lv   || 0,
+            post_count:   user?.post_count   || 0,
+            created_at:   user?.created_at   || new Date().toISOString()
+          };
+          localStorage.setItem('kirein_user', JSON.stringify(user));
+        }
+        // UIを更新
+        const loginBtn = document.getElementById('loginBtn');
+        const userLink = document.getElementById('userLink');
+        if(loginBtn) loginBtn.style.display = 'none';
+        if(userLink){
+          userLink.style.display = 'flex';
+          userLink.innerHTML = `<span class="user-badge">
+            ${firebaseUser.photoURL ? `<img src="${firebaseUser.photoURL}" style="width:20px;height:20px;border-radius:50%">` : ''}
+            ${user.nickname} <span class="lv lv${user.current_lv}">Lv.${user.current_lv}</span>
+          </span>`;
+        }
+        console.log('✅ Googleログイン:', firebaseUser.displayName);
+      } else {
+        // 未ログイン → LocalStorageのユーザーがあればそのまま使う
+        updateUIForLogin();
+      }
+    });
+
     console.log('✅ Firebase 接続完了');
   } catch(e) {
-    console.warn('⚠️ Firebase 初期化エラー（オフラインでも動作します）:', e.message);
-    window.db = null;
+    console.warn('⚠️ Firebase 初期化エラー:', e.message);
+    window.db = null; window.auth = null;
+  }
+
+  // Googleログイン処理
+  function handleLoginClick(){
+    const user = getUserData();
+    if(user){
+      // ログイン中 → ログアウト確認
+      if(confirm(`${user.nickname} さん、ログアウトしますか？`)){
+        if(window.auth) window.auth.signOut();
+        localStorage.removeItem('kirein_user');
+        location.reload();
+      }
+      return;
+    }
+    // 未ログイン → Google ログインを試みる
+    if(window.auth){
+      const provider = new firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      window.auth.signInWithPopup(provider).catch(err => {
+        // ポップアップがブロックされた場合はニックネーム入力にフォールバック
+        console.warn('Googleログイン失敗、ニックネーム入力に切り替え:', err.message);
+        fallbackNicknameLogin();
+      });
+    } else {
+      fallbackNicknameLogin();
+    }
+  }
+
+  function fallbackNicknameLogin(){
+    const nickname = prompt('ニックネームを入力してください（例：名古屋のタナカさん）');
+    if(nickname && nickname.trim()){
+      getOrCreateUser(nickname.trim());
+      updateUIForLogin();
+    }
   }
 </script>
 <style>
@@ -243,9 +316,9 @@
     <div class="head-cta">
       <a class="owner" href="./owner.html">店舗オーナーの方へ</a>
       <a id="searchBtn" class="btn sm ghost" href="#/">探す</a>
-      <a id="postBtn" class="btn sm mint" href="#/post">投稿する</a>
+      <button id="loginBtn" class="btn sm ghost" onclick="handleLoginClick()" style="font-family:inherit">🔑 ログイン</button>
       <a id="userLink" class="btn sm mint" href="#/mypage" style="display:none">マイページ</a>
-      <a class="btn sm" href="../clear-lp/index.html" style="display:none">店を登録する</a>
+      <a id="postBtn" class="btn sm mint" href="#/post">投稿する</a>
     </div>
   </div>
 </header>
@@ -1130,8 +1203,14 @@ function submitPost(e, shopId){
   e.preventDefault();
 
   try {
-    const user = getUserData();
-    if(!user) { alert('ログインしてください'); return; }
+    let user = getUserData();
+    if(!user){
+      // ログインしていない場合はここでニックネームを入力してもらう
+      const nickname = prompt('はじめてご利用ですか？\nニックネームを入力してください（例：名古屋のタナカさん）');
+      if(!nickname || !nickname.trim()){ return; }
+      user = getOrCreateUser(nickname.trim());
+      updateUIForLogin();
+    }
 
     const form = e.target;
     const tier    = document.getElementById('postTier')?.value || 'simple';
@@ -1313,6 +1392,17 @@ function showSearchPage(){
 }
 
 function showPostPage(){
+  // 未ログインの場合はニックネームを先に入力してもらう
+  if(!getUserData()){
+    const nickname = prompt('キレインへようこそ！\nニックネームを入力してください（例：名古屋のタナカさん）');
+    if(!nickname || !nickname.trim()){
+      window.location.hash = '/';
+      return;
+    }
+    getOrCreateUser(nickname.trim());
+    updateUIForLogin();
+  }
+
   // 投稿ページ（フルスクリーン）を表示
   document.querySelectorAll('section, .wrap:not(.post-page-wrap), .layout, .ownerbar, .seo, footer').forEach(el => {
     el.style.display = 'none';
