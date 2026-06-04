@@ -97,16 +97,30 @@ function handleLoginClick(){
     }
     return;
   }
-  // Googleログイン（リダイレクト方式）
+  // Googleログイン（ポップアップ方式）
   if(window.auth && window.firebase){
-    try{
-      const provider = new firebase.auth.GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
-      window.auth.signInWithRedirect(provider);
-    }catch(e){
-      console.warn('Googleログイン失敗:', e.message);
-      showNicknameModal();
-    }
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    window.auth.signInWithPopup(provider)
+      .then(result => {
+        console.log('✅ Googleログイン成功:', result.user.displayName);
+        // UIを即座に更新
+        const loginBtn = document.getElementById('loginBtn');
+        const userLink = document.getElementById('userLink');
+        if(loginBtn) loginBtn.style.display = 'none';
+        if(userLink){
+          userLink.style.display = 'flex';
+          userLink.innerHTML = `<span class="user-badge">
+            ${result.user.photoURL ? `<img src="${result.user.photoURL}" style="width:20px;height:20px;border-radius:50%;margin-right:4px">` : ''}
+            ${result.user.displayName} <span class="lv lv0">Lv.0</span>
+          </span>`;
+        }
+      })
+      .catch(err => {
+        console.warn('Googleログイン失敗:', err.code, err.message);
+        // ポップアップがブロックされた場合はニックネーム入力
+        showNicknameModal();
+      });
   } else {
     showNicknameModal();
   }
