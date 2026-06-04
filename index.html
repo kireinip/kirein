@@ -1269,23 +1269,58 @@ function placeToStore(place, idx){
   };
 }
 
-// 名古屋市全体をカバーする検索ポイント（各区の中心）
+// 名古屋16区 + 主要繁華街をカバー
 const NAGOYA_SEARCH_POINTS = [
+  // 中心部・繁華街（密度高い → 複数ポイント）
   { lat: 35.1705, lng: 136.8819, name: '中区・栄' },
+  { lat: 35.1650, lng: 136.8950, name: '中区・大須' },
+  { lat: 35.1700, lng: 136.8820, name: '中区・伏見' },
+  { lat: 35.1700, lng: 136.8700, name: '中村区・名駅' },
+  { lat: 35.1680, lng: 136.8660, name: '中村区・名駅西' },
+  // 各区
   { lat: 35.1815, lng: 136.9064, name: '東区' },
-  { lat: 35.1500, lng: 136.9100, name: '千種区' },
-  { lat: 35.1950, lng: 136.8985, name: '北区' },
-  { lat: 35.1600, lng: 136.8500, name: '西区' },
-  { lat: 35.1400, lng: 136.8700, name: '中村区・名駅' },
-  { lat: 35.1200, lng: 136.9000, name: '昭和区' },
-  { lat: 35.1000, lng: 136.9200, name: '瑞穂区' },
-  { lat: 35.0900, lng: 136.8800, name: '熱田区' },
-  { lat: 35.1100, lng: 136.8500, name: '中川区' },
+  { lat: 35.1550, lng: 136.9150, name: '千種区' },
+  { lat: 35.1450, lng: 136.9300, name: '千種区・覚王山' },
+  { lat: 35.2050, lng: 136.8985, name: '北区・黒川' },
+  { lat: 35.1950, lng: 136.8750, name: '北区・大曽根' },
+  { lat: 35.1750, lng: 136.8480, name: '西区' },
+  { lat: 35.1900, lng: 136.8580, name: '西区・浄心' },
+  { lat: 35.1250, lng: 136.9050, name: '昭和区' },
+  { lat: 35.1050, lng: 136.9200, name: '瑞穂区' },
+  { lat: 35.0900, lng: 136.8900, name: '熱田区' },
+  { lat: 35.1000, lng: 136.8400, name: '中川区' },
+  { lat: 35.0750, lng: 136.8600, name: '港区' },
+  { lat: 35.0600, lng: 136.8900, name: '南区' },
+  { lat: 35.2100, lng: 136.9500, name: '守山区' },
+  { lat: 35.0700, lng: 137.0000, name: '緑区' },
+  { lat: 35.1700, lng: 136.9900, name: '名東区' },
+  { lat: 35.1000, lng: 136.9500, name: '天白区' },
 ];
 
+// Places API のページネーション（next_page_token）で最大60件取得
+function nearbySearchWithPagination(request, allResults, resolve){
+  placesService.nearbySearch(request, (results, status, pagination) => {
+    if(status === google.maps.places.PlacesServiceStatus.OK && results){
+      results.forEach(place => {
+        if(!STORES.find(s => s.placeId === place.place_id)){
+          allResults.push(place);
+          STORES.push(placeToStore(place, STORES.length));
+        }
+      });
+      // 次のページがあれば取得（2秒待つ必要あり）
+      if(pagination && pagination.hasNextPage){
+        setTimeout(() => pagination.nextPage(), 2000);
+      } else {
+        resolve(allResults.length);
+      }
+    } else {
+      resolve(allResults.length);
+    }
+  });
+}
+
 function loadRestaurantsFromAPI(){
-  // キャッシュをチェック（24時間以内なら再利用）
-  const cacheKey = 'kirein_restaurants_v2';
+  const cacheKey = 'kirein_restaurants_v3';
   const cached = localStorage.getItem(cacheKey);
   if(cached){
     try{
@@ -1300,41 +1335,47 @@ function loadRestaurantsFromAPI(){
     }catch(e){ console.log('キャッシュ読み込みエラー:', e); }
   }
 
-  // キャッシュなし → Google Places API から取得
   if(!placesService){
     console.log('⚠️ Places Service 未初期化');
     return;
   }
 
-  console.log('📍 名古屋市全体の飲食店を取得中...');
+  console.log(`📍 名古屋${NAGOYA_SEARCH_POINTS.length}エリアの飲食店を取得中...`);
   STORES = [];
-  let remaining = NAGOYA_SEARCH_POINTS.length;
 
-  NAGOYA_SEARCH_POINTS.forEach(point => {
-    placesService.nearbySearch({
-      location: { lat: point.lat, lng: point.lng },
-      radius: 1500,
-      type: 'restaurant',
-      language: 'ja'
-    }, (results, status) => {
-      if(status === google.maps.places.PlacesServiceStatus.OK && results){
-        results.forEach((place, idx) => {
-          // 重複チェック
-          if(!STORES.find(s => s.placeId === place.place_id)){
-            STORES.push(placeToStore(place, STORES.length));
-          }
-        });
-        console.log(`✅ ${point.name}: ${results.length}件取得（累計:${STORES.length}件）`);
+  // 順番に検索（並列すぎると API 制限にかかる）
+  let idx = 0;
+  function searchNext(){
+    if(idx >= NAGOYA_SEARCH_POINTS.length){
+      // 全エリア完了
+      const cacheKey2 = 'kirein_restaurants_v3';
+      try {
+        localStorage.setItem(cacheKey2, JSON.stringify({ stores: STORES, timestamp: Date.now() }));
+      } catch(e) {
+        // localStorage 容量超えたら古いキャッシュを削除して再試行
+        localStorage.removeItem('kirein_restaurants_v2');
+        localStorage.removeItem('kirein_restaurants_cache');
+        try { localStorage.setItem(cacheKey2, JSON.stringify({ stores: STORES, timestamp: Date.now() })); } catch(e2){}
       }
-      remaining--;
-      if(remaining === 0){
-        // 全エリア取得完了 → キャッシュに保存
-        localStorage.setItem(cacheKey, JSON.stringify({ stores: STORES, timestamp: Date.now() }));
-        console.log(`🎉 名古屋市全体 ${STORES.length}店舗の取得完了！`);
-        render();
-      }
+      console.log(`🎉 名古屋全域 ${STORES.length}店舗の取得完了！`);
+      render();
+      return;
+    }
+    const point = NAGOYA_SEARCH_POINTS[idx++];
+    new Promise(resolve => {
+      nearbySearchWithPagination({
+        location: { lat: point.lat, lng: point.lng },
+        radius: 1200,
+        type: 'restaurant',
+        language: 'ja'
+      }, [], resolve);
+    }).then(count => {
+      console.log(`✅ ${point.name}: 累計${STORES.length}件`);
+      render(); // 取得するたびにリアルタイム更新
+      setTimeout(searchNext, 500); // 0.5秒後に次のエリアへ
     });
-  });
+  }
+  searchNext();
 }
 
 // 旧キャッシュを削除
