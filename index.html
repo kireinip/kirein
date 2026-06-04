@@ -256,6 +256,18 @@
       <button class="btn" onclick="render()">この条件で探す</button>
     </div>
 
+    <!-- 現在地ボタン -->
+    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+      <button id="gpsSearchBtn" onclick="searchByGPS()"
+        style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.1);color:#fff;font-size:12.5px;font-weight:700;cursor:pointer;transition:.2s"
+        onmouseover="this.style.background='rgba(255,255,255,.2)'"
+        onmouseout="this.style.background='rgba(255,255,255,.1)'">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" stroke-dasharray="2 4"/></svg>
+        📍 現在地から探す
+      </button>
+      <span id="gpsStatus" style="font-size:11px;color:#9ecfc8;align-self:center;display:none"></span>
+    </div>
+
     <div class="chips" id="chips">
       <!-- attribute chips injected -->
     </div>
@@ -1935,21 +1947,93 @@ function filtered(){
            (!ar||s.area===ar)&&(!ct||s.cat===ct)&&
            [...activeAttrs].every(a=>s.tags.includes(a));
   });
-  // 認定店フィルター時は認定ランク順に並べる
+  // GPS モード：距離順
+  if(gpsSearchActive && gpsSearchLocation){
+    r = r.map(s => ({
+      ...s,
+      _dist: calculateDistance(gpsSearchLocation.lat, gpsSearchLocation.lng, s.lat||35.17, s.lng||136.88)
+    })).sort((a,b) => a._dist - b._dist);
+    return r;
+  }
+
+  // 認定店フィルター時は認定ランク順
   if(onlyCertified){
     r.sort((a,b)=>RANKORDER[calcStoreRank(b.id)]-RANKORDER[calcStoreRank(a.id)]);
   } else {
-    const score = calcScore;
-    r.sort((a,b)=> {
+    r.sort((a,b)=>{
       const sa=calcScore(a.id), sb=calcScore(b.id);
       if(sort==='rank') return RANKORDER[calcStoreRank(b.id)]-RANKORDER[calcStoreRank(a.id)];
       if(sb && sa) return (sb.total||0)-(sa.total||0);
-      if(sb) return 1; // 評価済みを先に
+      if(sb) return 1;
       if(sa) return -1;
       return 0;
     });
   }
   return r;
+}
+
+// ========== 現在地から探す ==========
+let gpsSearchActive = false;
+let gpsSearchLocation = null;
+
+async function searchByGPS(){
+  const btn    = document.getElementById('gpsSearchBtn');
+  const status = document.getElementById('gpsStatus');
+
+  if(gpsSearchActive){
+    // 解除
+    gpsSearchActive = false;
+    gpsSearchLocation = null;
+    btn.style.background = 'rgba(255,255,255,.1)';
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" stroke-dasharray="2 4"/></svg> 📍 現在地から探す`;
+    status.style.display = 'none';
+    render();
+    return;
+  }
+
+  btn.innerHTML = '⏳ 現在地を取得中...';
+  status.style.display = 'inline';
+  status.textContent = '';
+
+  const loc = await getHighAccuracyLocation();
+  if(!loc){
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" stroke-dasharray="2 4"/></svg> 📍 現在地から探す`;
+    status.textContent = '位置情報の取得に失敗しました';
+    status.style.color = '#f08080';
+    return;
+  }
+
+  gpsSearchActive    = true;
+  gpsSearchLocation  = loc;
+  btn.style.background = 'rgba(37,181,152,.35)';
+  btn.style.borderColor = 'var(--mint)';
+  btn.innerHTML = `✅ 現在地から探している（解除する）`;
+  status.textContent = `📍 精度 ±${loc.accuracy}m`;
+  status.style.display = 'inline';
+  status.style.color = '#9ecfc8';
+
+  // 地図を現在地に移動
+  if(window.gmap){
+    window.gmap.setCenter({ lat: loc.lat, lng: loc.lng });
+    window.gmap.setZoom(15);
+    // 現在地マーカーを追加
+    if(window.myLocationMarker) window.myLocationMarker.setMap(null);
+    window.myLocationMarker = new google.maps.Marker({
+      position: { lat: loc.lat, lng: loc.lng },
+      map: window.gmap,
+      title: '現在地',
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 10,
+        fillColor: '#25b598',
+        fillOpacity: 1,
+        strokeColor: '#fff',
+        strokeWeight: 2,
+      }
+    });
+  }
+
+  render(); // 距離順で再レンダリング
 }
 
 function goToPost(storeId){
@@ -2027,7 +2111,10 @@ function render(){
       </div>
       <div class=”body”>
         <div class=”top”>
-          <div><div class=”name”>${s.name}</div><div class=”meta”>${s.area}・${s.cat}</div></div>
+          <div>
+            <div class=”name”>${s.name}</div>
+            <div class=”meta”>${s.area}・${s.cat}${s._dist != null ? ` <span style=”color:var(--mint);font-weight:700”>📍 ${s._dist < 1 ? (s._dist*1000).toFixed(0)+'m' : s._dist.toFixed(1)+'km'}</span>` : ''}</div>
+          </div>
           ${certLbl
             ? `<span style=”font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:7px;background:${certColor}22;color:${certColor};white-space:nowrap”>✦ ${certLbl}</span>`
             : '<span style=”font-size:11px;color:var(--muted);padding:4px 8px;background:var(--bg-soft);border-radius:6px”>未評価</span>'}
