@@ -71,11 +71,10 @@
     window.db = null; window.auth = null;
   }
 
-  // Googleログイン処理
+  // Googleログイン処理（リダイレクト方式）
   function handleLoginClick(){
     const user = getUserData();
     if(user){
-      // ログイン中 → ログアウト確認
       if(confirm(`${user.nickname} さん、ログアウトしますか？`)){
         if(window.auth) window.auth.signOut();
         localStorage.removeItem('kirein_user');
@@ -83,18 +82,28 @@
       }
       return;
     }
-    // 未ログイン → Google ログインを試みる
     if(window.auth){
+      // リダイレクト方式（ポップアップより安定）
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
-      window.auth.signInWithPopup(provider).catch(err => {
-        // ポップアップがブロックされた場合はニックネーム入力にフォールバック
-        console.warn('Googleログイン失敗、ニックネーム入力に切り替え:', err.message);
-        fallbackNicknameLogin();
-      });
+      localStorage.setItem('kirein_login_redirect', '1'); // リダイレクト中フラグ
+      window.auth.signInWithRedirect(provider);
     } else {
       fallbackNicknameLogin();
     }
+  }
+
+  // リダイレクト後の結果を処理
+  if(window.auth){
+    window.auth.getRedirectResult().then(result => {
+      if(result && result.user){
+        console.log('✅ Googleリダイレクトログイン成功:', result.user.displayName);
+        localStorage.removeItem('kirein_login_redirect');
+      }
+    }).catch(err => {
+      console.warn('リダイレクトログインエラー:', err.message);
+      localStorage.removeItem('kirein_login_redirect');
+    });
   }
 
   function fallbackNicknameLogin(){
