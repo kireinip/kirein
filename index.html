@@ -1007,10 +1007,13 @@ function showPostPage(){
   }
 
   postPageContent.innerHTML = `
-    <section style="background:linear-gradient(150deg,#13564a,#0b2c27);color:#fff;padding:40px 0 30px">
+    <section style="background:linear-gradient(150deg,#13564a,#0b2c27);color:#fff;padding:28px 0 24px">
       <div class="wrap">
-        <h1 style="font-size:32px;font-weight:700;margin-bottom:12px">いまいるお店の清潔感を報告する</h1>
-        <p style="color:#bcd2cb;font-size:14px">トイレの清潔さ、空気の良さを5段階評価で投稿。ポイントを獲得して、キレインレポーターへ！</p>
+        <button onclick="window.location.hash='/'" style="background:rgba(255,255,255,.15);border:none;color:#fff;padding:8px 16px;border-radius:999px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:16px;display:inline-flex;align-items:center;gap:6px">
+          ← トップに戻る
+        </button>
+        <h1 style="font-size:28px;font-weight:700;margin-bottom:8px">いまいるお店の清潔感を報告する</h1>
+        <p style="color:#bcd2cb;font-size:13px">トイレの清潔さ、空気の良さを5段階評価で投稿。ポイントを獲得して、キレインレポーターへ！</p>
       </div>
     </section>
 
