@@ -1872,16 +1872,51 @@ const _REMOVED = [
 ]; // _REMOVED 終了
 const ATTRS=["無臭","女性に人気","子ども安心","高級感","デート向き","禁煙"];
 const RANKORDER={black:4,platinum:3,gold:2,silver:1,bronze:0};
-const RANKLBL={black:"Lv.4",platinum:"Lv.3",gold:"Lv.2",silver:"Lv.1",bronze:"未認定"};
-const RANKCHAR={black:"4",platinum:"3",gold:"2",silver:"1",bronze:"?"};
-const RANKDESC={black:"毎日プロが守るプレミアム",platinum:"わざわざ使いたい",gold:"気持ちよく使える",silver:"ためらわず使える",bronze:"まだ評価なし"};
-const activeAttrs=new Set();
+const RANKLBL={black:"💎 最優秀認定",platinum:"🥇 優良認定",gold:"🥈 認定店",silver:"🥉 認定店",bronze:"未評価"};
+const RANKCHAR={black:"💎",platinum:"🏆",gold:"★",silver:"✓",bronze:"?"};
+const RANKDESC={black:"最高評価・完璧な清潔さ",platinum:"非常に清潔で快適",gold:"清潔感があると評価",silver:"基準を満たした認定店",bronze:"まだ評価なし"};
+const RANK_CERT_LBL={black:"キレイン最優秀",platinum:"キレイン最優秀",gold:"キレイン優良",silver:"キレイン認定",bronze:null};
+const RANK_CERT_COLOR={black:"#9b59b6",platinum:"#c2a25f",gold:"#27ae60",silver:"#25b598",bronze:null};
+
+// 投稿データからリアルタイムでランクを自動計算
+function calcStoreRank(shopId){
+  const posts = getPosts().filter(p => p.shop_id === shopId);
+  if(!posts.length) return 'bronze';
+  const count = posts.length;
+  const avg = posts.reduce((s,p) => s + ((p.cleanliness_rating||0)+(p.air_rating||0))/2, 0) / count;
+  if(count >= 20 && avg >= 4.5) return 'black';
+  if(count >= 20 && avg >= 4.0) return 'platinum';
+  if(count >= 10 && avg >= 4.0) return 'gold';
+  if(count >= 3  && avg >= 3.5) return 'silver';
+  return 'bronze';
+}
+
+let onlyCertified = false; // キレイン認定店フィルター
+const activeAttrs = new Set();
 
 // populate selects + chips
 const areaSel=document.getElementById('area'),catSel=document.getElementById('cat');
 [...new Set(STORES.map(s=>s.area))].forEach(a=>areaSel.add(new Option(a,a)));
 [...new Set(STORES.map(s=>s.cat))].forEach(c=>catSel.add(new Option(c,c)));
 const chipBox=document.getElementById('chips');
+
+// キレイン認定店チップ（先頭に追加）
+const certChip=document.createElement('button');
+certChip.className='chip';
+certChip.innerHTML='✦ キレイン認定店';
+certChip.style.cssText='background:linear-gradient(120deg,var(--mint),#1a9e84);color:#062019;border-color:var(--mint);font-weight:700';
+certChip.onclick=()=>{
+  onlyCertified=!onlyCertified;
+  certChip.classList.toggle('on',onlyCertified);
+  if(onlyCertified){
+    certChip.style.cssText='background:linear-gradient(120deg,var(--mint),#1a9e84);color:#062019;border-color:var(--mint);font-weight:700;box-shadow:0 4px 12px rgba(37,181,152,.4)';
+  } else {
+    certChip.style.cssText='background:linear-gradient(120deg,var(--mint),#1a9e84);color:#062019;border-color:var(--mint);font-weight:700';
+  }
+  render();
+};
+chipBox.appendChild(certChip);
+
 ATTRS.forEach(a=>{
   const b=document.createElement('button');b.className='chip';b.textContent=a;
   b.onclick=()=>{b.classList.toggle('on');activeAttrs.has(a)?activeAttrs.delete(a):activeAttrs.add(a);render();};
@@ -1893,12 +1928,27 @@ const star=n=>'★'.repeat(Math.round(n))+'☆'.repeat(5-Math.round(n));
 function filtered(){
   const q=document.getElementById('q').value.trim();
   const ar=areaSel.value,ct=catSel.value,sort=document.getElementById('sort').value;
-  let r=STORES.filter(s=>
-    (!q||s.name.includes(q)||s.area.includes(q)||s.cat.includes(q)||s.tags.some(t=>t.includes(q)))&&
-    (!ar||s.area===ar)&&(!ct||s.cat===ct)&&
-    [...activeAttrs].every(a=>s.tags.includes(a))
-  );
-  r.sort((a,b)=> sort==='kirei'? b.kirei-a.kirei : sort==='rank'? RANKORDER[b.rank]-RANKORDER[a.rank] : b.sc.total-a.sc.total);
+  let r=STORES.filter(s=>{
+    const rank = calcStoreRank(s.id);
+    if(onlyCertified && rank==='bronze') return false; // 認定店フィルター
+    return (!q||s.name.includes(q)||s.area.includes(q)||s.cat.includes(q)||(s.address||'').includes(q))&&
+           (!ar||s.area===ar)&&(!ct||s.cat===ct)&&
+           [...activeAttrs].every(a=>s.tags.includes(a));
+  });
+  // 認定店フィルター時は認定ランク順に並べる
+  if(onlyCertified){
+    r.sort((a,b)=>RANKORDER[calcStoreRank(b.id)]-RANKORDER[calcStoreRank(a.id)]);
+  } else {
+    const score = calcScore;
+    r.sort((a,b)=> {
+      const sa=calcScore(a.id), sb=calcScore(b.id);
+      if(sort==='rank') return RANKORDER[calcStoreRank(b.id)]-RANKORDER[calcStoreRank(a.id)];
+      if(sb && sa) return (sb.total||0)-(sa.total||0);
+      if(sb) return 1; // 評価済みを先に
+      if(sa) return -1;
+      return 0;
+    });
+  }
   return r;
 }
 
@@ -1942,8 +1992,11 @@ function render(){
   }
 
   list.innerHTML = r.map(s => {
-    const score = calcScore(s.id);
+    const score    = calcScore(s.id);
     const hasScore = score !== null;
+    const rank     = calcStoreRank(s.id);
+    const certLbl  = RANK_CERT_LBL[rank];
+    const certColor= RANK_CERT_COLOR[rank];
 
     const scoreHtml = hasScore ? `
       <div class=”scores”>
@@ -1967,15 +2020,17 @@ function render(){
     <div class=”card” data-id=”${s.id}” onclick=”openModal(${s.id})”
          onmouseenter=”hl(${s.id},true)” onmouseleave=”hl(${s.id},false)”>
       <div class=”thumb”>
-        <span class=”rankbadge ${hasScore ? 'm-'+s.rank : ''}” style=”${hasScore?'':'background:#ccc'}”>
-          ${hasScore ? (RANKCHAR[s.rank]||'?') : '?'}
+        <span class=”rankbadge” style=”background:${certColor||'#ccc'}”>
+          ${RANKCHAR[rank]||'?'}
         </span>
         ${s.icon||'🍽️'}
       </div>
       <div class=”body”>
         <div class=”top”>
           <div><div class=”name”>${s.name}</div><div class=”meta”>${s.area}・${s.cat}</div></div>
-          ${hasScore ? `<span class=”cert ${s.rank}”>✦ ${RANKLBL[s.rank]||''}</span>` : '<span style=”font-size:11px;color:var(--muted);padding:4px 8px;background:var(--bg-soft);border-radius:6px”>未評価</span>'}
+          ${certLbl
+            ? `<span style=”font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:7px;background:${certColor}22;color:${certColor};white-space:nowrap”>✦ ${certLbl}</span>`
+            : '<span style=”font-size:11px;color:var(--muted);padding:4px 8px;background:var(--bg-soft);border-radius:6px”>未評価</span>'}
         </div>
         ${scoreHtml}
         ${quoteHtml}
