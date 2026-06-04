@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>キレイン｜店舗オーナーの方へ｜トイレ改善で来客数が変わる</title>
+<meta name="description" content="お客様がトイレで何を感じたか、知っていますか？キレインの匿名フィードバックで、見えなかったトイレの課題が分かる。名古屋の飲食店オーナー向けサービス。" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@600;700&family=Cormorant+Garamond:wght@600&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --pine:#0e3a33; --pine-deep:#082722; --mint:#25b598; --mint-soft:#e6f5f1;
+  --gold:#c2a25f; --ink:#182320; --muted:#5d6b66; --line:#e4eae7;
+  --bg:#fff; --soft:#f6f9f8; --radius:16px;
+  --shadow:0 16px 44px -22px rgba(14,58,51,.3);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:"Noto Sans JP",system-ui,sans-serif;color:var(--ink);background:var(--bg);line-height:1.7;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:"Noto Serif JP",serif}
+a{color:inherit;text-decoration:none}
+.wrap{width:min(1100px,94vw);margin-inline:auto}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:999px;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:.2s;font-family:inherit}
+.btn-mint{background:var(--mint);color:#062019}
+.btn-mint:hover{background:#1ea487;transform:translateY(-2px);box-shadow:0 8px 24px rgba(37,181,152,.3)}
+.btn-pine{background:var(--pine);color:#fff}
+.btn-pine:hover{background:var(--pine-deep);transform:translateY(-2px)}
+.btn-ghost{background:transparent;color:var(--pine);border:2px solid var(--pine)}
+.btn-ghost:hover{background:var(--mint-soft)}
+
+/* ========== HEADER ========== */
+header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.head-in{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+.logo{display:flex;align-items:center;gap:8px;font-family:"Cormorant Garamond",serif;font-size:22px;color:var(--pine);font-weight:600}
+.logo svg{width:22px;height:22px}
+.head-nav{display:flex;align-items:center;gap:20px;font-size:13px}
+.head-nav a{color:var(--muted)}
+.head-nav a:hover{color:var(--pine)}
+
+/* ========== HERO ========== */
+.hero{background:linear-gradient(150deg,var(--pine-deep),#0b2c27 50%,#0e3a33);color:#fff;padding:80px 0 70px;position:relative;overflow:hidden}
+.hero-bg{position:absolute;inset:0;background-image:url('https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=1400&auto=format&fit=crop&q=60');background-size:cover;background-position:center;opacity:0.1}
+.hero .wrap{position:relative;z-index:1}
+.hero-tag{display:inline-block;background:rgba(37,181,152,.25);color:var(--mint);font-size:12px;font-weight:700;padding:6px 14px;border-radius:999px;margin-bottom:20px;letter-spacing:.06em}
+.hero h1{font-size:clamp(28px,4vw,48px);font-weight:700;line-height:1.3;margin-bottom:20px}
+.hero h1 .ac{color:var(--mint)}
+.hero p.lead{font-size:16px;color:#bcd2cb;max-width:38em;line-height:1.8;margin-bottom:36px}
+.hero-btns{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.hero-note{font-size:12px;color:#7eada4;margin-top:16px}
+
+/* ========== STATS ========== */
+.stats{background:var(--soft);padding:50px 0}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.stat-card{background:#fff;border-radius:var(--radius);padding:28px;text-align:center;box-shadow:var(--shadow)}
+.stat-card .num{font-size:42px;font-weight:700;color:var(--pine);font-family:"Cormorant Garamond",serif;line-height:1}
+.stat-card .unit{font-size:16px;color:var(--pine);font-weight:700}
+.stat-card .desc{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.7}
+
+/* ========== PROBLEM ========== */
+.problem{padding:80px 0}
+.section-tag{font-size:12px;font-weight:700;color:var(--mint);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px}
+.section-title{font-size:clamp(22px,3vw,34px);font-weight:700;color:var(--pine);margin-bottom:16px;line-height:1.4}
+.section-lead{font-size:15px;color:var(--muted);max-width:38em;line-height:1.9;margin-bottom:40px}
+.voice-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.voice-card{border-radius:var(--radius);padding:22px;position:relative}
+.voice-card.neg{background:#fff5f5;border:1px solid #fdd}
+.voice-card.pos{background:var(--mint-soft);border:1px solid #b5e8da}
+.voice-card .emoji{font-size:28px;margin-bottom:10px}
+.voice-card .text{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.voice-card .sub{font-size:12px;color:var(--muted);line-height:1.7}
+.voice-card .label{position:absolute;top:12px;right:12px;font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px}
+.voice-card.neg .label{background:#fdd;color:#c0392b}
+.voice-card.pos .label{background:#b5e8da;color:var(--pine)}
+
+/* ========== HOW IT WORKS ========== */
+.how{background:var(--soft);padding:80px 0}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:40px}
+.step{background:#fff;border-radius:var(--radius);padding:28px;text-align:center;box-shadow:var(--shadow)}
+.step-num{width:40px;height:40px;border-radius:50%;background:var(--mint);color:#fff;display:grid;place-items:center;font-weight:700;font-size:18px;margin:0 auto 16px}
+.step h3{font-size:16px;color:var(--pine);margin-bottom:8px}
+.step p{font-size:13px;color:var(--muted);line-height:1.8}
+
+/* ========== PRICING ========== */
+.pricing{padding:80px 0}
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:40px}
+.plan{border-radius:var(--radius);padding:30px;border:1px solid var(--line)}
+.plan.featured{border:2px solid var(--mint);position:relative;box-shadow:var(--shadow)}
+.plan .badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--mint);color:#062019;font-size:11px;font-weight:700;padding:4px 14px;border-radius:999px;white-space:nowrap}
+.plan-name{font-size:14px;font-weight:700;color:var(--muted);margin-bottom:10px}
+.plan-price{font-size:36px;font-weight:700;color:var(--pine);font-family:"Cormorant Garamond",serif;line-height:1}
+.plan-price span{font-size:14px;color:var(--muted);font-family:"Noto Sans JP",sans-serif}
+.plan-desc{font-size:13px;color:var(--muted);margin:10px 0 20px;line-height:1.7}
+.plan-features{list-style:none;display:grid;gap:10px;margin-bottom:24px}
+.plan-features li{font-size:13px;display:flex;align-items:flex-start;gap:8px;line-height:1.6}
+.plan-features li::before{content:"✓";color:var(--mint);font-weight:700;flex-shrink:0;margin-top:1px}
+.plan-features li.off{color:#ccc}
+.plan-features li.off::before{content:"–";color:#ccc}
+
+/* ========== FEEDBACK PREVIEW ========== */
+.preview{background:var(--soft);padding:80px 0}
+.preview-box{background:#fff;border-radius:var(--radius);padding:32px;box-shadow:var(--shadow);max-width:680px;margin:40px auto 0}
+.feedback-locked{filter:blur(5px);user-select:none;pointer-events:none;opacity:.5}
+.feedback-item{padding:14px;border-left:3px solid var(--mint);background:var(--soft);border-radius:0 8px 8px 0;margin-bottom:12px;font-size:13px;line-height:1.7}
+.feedback-item.neg{border-color:#f05;}
+.lock-overlay{text-align:center;padding:28px;background:#fff;border-radius:var(--radius);border:2px dashed var(--line);margin-top:-40px;position:relative;z-index:2}
+.lock-overlay h3{font-size:18px;color:var(--pine);margin-bottom:8px}
+.lock-overlay p{font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.8}
+
+/* ========== FAQ ========== */
+.faq{padding:80px 0}
+.faq-list{max-width:700px;margin:40px auto 0;display:grid;gap:16px}
+.faq-item{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.faq-q{padding:18px 20px;font-weight:700;font-size:14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:#fff}
+.faq-q:hover{background:var(--soft)}
+.faq-a{padding:0 20px;max-height:0;overflow:hidden;transition:max-height .3s ease,padding .3s ease;font-size:13px;color:var(--muted);line-height:1.9}
+.faq-item.open .faq-a{max-height:200px;padding:0 20px 18px}
+.faq-item.open .faq-arrow{transform:rotate(180deg)}
+.faq-arrow{transition:transform .3s;font-size:12px;color:var(--muted)}
+
+/* ========== CTA ========== */
+.cta{background:linear-gradient(150deg,var(--pine-deep),#0b2c27);color:#fff;padding:80px 0;text-align:center}
+.cta h2{font-size:clamp(24px,3vw,38px);margin-bottom:16px}
+.cta p{color:#bcd2cb;font-size:15px;margin-bottom:36px;line-height:1.8}
+
+/* ========== FOOTER ========== */
+footer{background:#061a17;color:#7eada4;padding:40px 0 24px;font-size:12px}
+footer .ft{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+footer .copy{width:100%;border-top:1px solid rgba(255,255,255,.08);margin-top:20px;padding-top:18px;text-align:center}
+
+@media(max-width:768px){
+  .stats-grid,.steps,.plans,.voice-cards{grid-template-columns:1fr}
+  .hero h1{font-size:26px}
+  .hero-btns{flex-direction:column;align-items:stretch}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="wrap head-in">
+    <a href="./index.html" class="logo">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 22s7-6.2 7-12A7 7 0 0 0 5 10c0 5.8 7 12 7 12Z" fill="#25b598"/><circle cx="12" cy="10" r="2.6" fill="#fff"/></svg>
+      Kirein <span style="font-family:'Noto Sans JP';font-size:14px;font-weight:700;margin-left:4px">キレイン</span>
+    </a>
+    <div class="head-nav">
+      <a href="./index.html">ユーザー向けサービス</a>
+      <a href="#pricing">料金プラン</a>
+      <a href="#contact" class="btn btn-mint" style="padding:9px 18px;font-size:12px">無料で始める</a>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="wrap">
+    <div class="hero-tag">🏪 STORE OWNER</div>
+    <h1>お客様がトイレで<br>何を感じたか、<span class="ac">知っていますか？</span></h1>
+    <p class="lead">
+      トイレがきれいな店に、もう一度行きたいと思う。<br>
+      逆に、一度でも不快な思いをすると、二度と来ない。<br>
+      キレインは、そのリアルな声を、あなたの店に届けます。
+    </p>
+    <div class="hero-btns">
+      <a href="#pricing" class="btn btn-mint" style="font-size:15px;padding:16px 32px">無料プランで始める →</a>
+      <a href="#preview" class="btn btn-ghost" style="color:#fff;border-color:rgba(255,255,255,.4);font-size:15px;padding:16px 32px">フィードバック例を見る</a>
+    </div>
+    <div class="hero-note">※ 無料プランはクレジットカード不要。いつでも解約可能。</div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="stats">
+  <div class="wrap">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="num">72<span class="unit">%</span></div>
+        <div class="desc">「トイレが汚かった」という理由で<br>そのお店に二度と行かなかった経験がある</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">68<span class="unit">%</span></div>
+        <div class="desc">飲食店のトイレが清潔かどうかを<br>来店前にチェックしたいと思っている</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">3.8<span class="unit">倍</span></div>
+        <div class="desc">「トイレがきれい」と評価された店舗は<br>リピーター率が平均3.8倍高い（当社調べ）</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section class="problem">
+  <div class="wrap">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center">
+      <div>
+        <div class="section-tag">THE PROBLEM</div>
+        <h2 class="section-title">お客様の声は、<br>あなたに届いていない</h2>
+        <p class="section-lead">
+          お客様がトイレで感じた不満は、SNSやグルメサイトには書かれにくい。
+          でも、口コミには残らない「小さな不快」が、リピートを止めています。
+          キレインは、その声を匿名で、店舗だけに届けます。
+        </p>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:center;gap:12px;font-size:14px">
+            <span style="font-size:20px">😶</span>
+            <span>不満があってもSNSには書かない → <b>黙って来なくなる</b></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;font-size:14px">
+            <span style="font-size:20px">😰</span>
+            <span>口コミサイトに書かれた後では手遅れ → <b>評判がすでに落ちている</b></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;font-size:14px">
+            <span style="font-size:20px">✅</span>
+            <span>キレインなら早期発見・早期改善 → <b>リピーターを守れる</b></span>
+          </div>
+        </div>
+      </div>
+      <div class="voice-cards">
+        <div class="voice-card neg">
+          <div class="label">非公開フィードバック</div>
+          <div class="emoji">😨</div>
+          <div class="text">「座りたくない…」</div>
+          <div class="sub">便座の清潔さへの不満。この声は一般には公開されず、あなたの店にだけ届きます。</div>
+        </div>
+        <div class="voice-card neg">
+          <div class="label">非公開フィードバック</div>
+          <div class="emoji">😤</div>
+          <div class="text">「石鹸が切れてた」</div>
+          <div class="sub">アメニティ不足のフィードバック。すぐに補充対応できます。</div>
+        </div>
+        <div class="voice-card pos">
+          <div class="label">公開レビュー</div>
+          <div class="emoji">✨</div>
+          <div class="text">「無臭・いい香り！」</div>
+          <div class="sub">ポジティブな評価はキレインに公開され、新規来店の動機になります。</div>
+        </div>
+        <div class="voice-card pos">
+          <div class="label">公開レビュー</div>
+          <div class="emoji">😊</div>
+          <div class="text">「また使いたい！」</div>
+          <div class="sub">「また来たい」という気持ちがそのまま口コミになります。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how">
+  <div class="wrap">
+    <div style="text-align:center">
+      <div class="section-tag">HOW IT WORKS</div>
+      <h2 class="section-title">キレインの仕組み</h2>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>お客様が来店・投稿</h3>
+        <p>来店したユーザーがトイレの清潔さを「心の声」で投稿。においは？便座は？手洗いは？の3つの質問に答えるだけ。</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>ポジティブは公開、ネガティブはあなただけに</h3>
+        <p>良い評価はキレインのサービスページに掲載。気になった点・改善希望は、店舗と運営にのみ匿名で届きます。</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>フィードバックを改善に活かす</h3>
+        <p>届いた声をもとに改善。改善後はスコアが上がり、キレイン認定バッジがより目立つ表示に。来客増につながります。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEEDBACK PREVIEW -->
+<section class="preview" id="preview">
+  <div class="wrap">
+    <div style="text-align:center">
+      <div class="section-tag">FEEDBACK PREVIEW</div>
+      <h2 class="section-title">届くフィードバックのイメージ</h2>
+      <p style="color:var(--muted);font-size:14px;margin-top:8px">有料プランで、こんな声が届きます</p>
+    </div>
+    <div class="preview-box">
+      <div style="font-size:13px;font-weight:700;color:var(--pine);margin-bottom:16px">📬 最新のフィードバック（3件）</div>
+
+      <!-- 見せるもの -->
+      <div class="feedback-item pos" style="border-color:var(--mint)">
+        <b>✨ においが気にならない / 便座も気持ちよく座れた</b><br>
+        <span style="color:var(--muted)">2026年6月4日 ・ 匿名ユーザー</span>
+      </div>
+
+      <!-- ぼかして見せる -->
+      <div style="position:relative">
+        <div class="feedback-locked">
+          <div class="feedback-item neg" style="border-left-color:#f05">
+            <b>😨 においが気になった / 床が汚れていた</b><br>
+            詳細メモ：「入り口付近の床に水たまりがあった。ペーパーも切れかけていた。早めの対応をお願いしたい。」<br>
+            <span style="color:var(--muted)">2026年6月3日 ・ 匿名ユーザー</span>
+          </div>
+          <div class="feedback-item neg" style="border-left-color:#f05">
+            <b>😤 石鹸がなかった / アメニティ不足</b><br>
+            詳細メモ：「ハンドソープが空だった。女性なので少し困りました。」<br>
+            <span style="color:var(--muted)">2026年6月2日 ・ 匿名ユーザー</span>
+          </div>
+        </div>
+        <div class="lock-overlay">
+          <div style="font-size:32px;margin-bottom:8px">🔒</div>
+          <h3>改善フィードバックが 2件 届いています</h3>
+          <p>内容を確認するには有料プランへのアップグレードが必要です。<br>早期に気づいて改善すれば、口コミに書かれる前に対処できます。</p>
+          <a href="#pricing" class="btn btn-mint">プランを見る →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="wrap">
+    <div style="text-align:center">
+      <div class="section-tag">PRICING</div>
+      <h2 class="section-title">料金プラン</h2>
+      <p style="color:var(--muted);font-size:14px;margin-top:8px">まず無料で始めて、必要なときにアップグレード</p>
+    </div>
+    <div class="plans">
+
+      <!-- 無料 -->
+      <div class="plan">
+        <div class="plan-name">FREE</div>
+        <div class="plan-price">¥0<span>/月</span></div>
+        <div class="plan-desc">まずはキレインに登録して、お客様の声を集め始めましょう。</div>
+        <ul class="plan-features">
+          <li>キレイン掲載（未認定バッジ）</li>
+          <li>ポジティブ評価の公開</li>
+          <li>改善フィードバックの<b>件数</b>だけ確認可能</li>
+          <li class="off">フィードバックの内容を確認</li>
+          <li class="off">月次レポート</li>
+          <li class="off">キレイン認定バッジ</li>
+        </ul>
+        <a href="#contact" class="btn btn-ghost" style="width:100%;justify-content:center">無料で始める</a>
+      </div>
+
+      <!-- ライト -->
+      <div class="plan featured">
+        <div class="badge">🌟 人気プラン</div>
+        <div class="plan-name">LIGHT</div>
+        <div class="plan-price">¥980<span>/月</span></div>
+        <div class="plan-desc">フィードバックの内容を確認して、すぐに改善に動けます。</div>
+        <ul class="plan-features">
+          <li>キレイン掲載（認定バッジ付き）</li>
+          <li>ポジティブ評価の公開</li>
+          <li><b>フィードバックの内容をすべて確認</b></li>
+          <li><b>項目別集計（においは？便座は？）</b></li>
+          <li>月次サマリーレポート</li>
+          <li class="off">競合比較・改善アドバイス</li>
+        </ul>
+        <a href="#contact" class="btn btn-mint" style="width:100%;justify-content:center">14日間無料で試す</a>
+      </div>
+
+      <!-- スタンダード -->
+      <div class="plan">
+        <div class="plan-name">STANDARD</div>
+        <div class="plan-price">¥2,980<span>/月</span></div>
+        <div class="plan-desc">データを活用して、トイレの清潔さを継続的に改善します。</div>
+        <ul class="plan-features">
+          <li>ライトプランの全機能</li>
+          <li><b>競合店との比較ダッシュボード</b></li>
+          <li><b>改善アドバイス付き月次レポート</b></li>
+          <li><b>優先掲載（検索上位に表示）</b></li>
+          <li><b>キレイン認定バッジ（プレミアム）</b></li>
+          <li>専任サポート窓口</li>
+        </ul>
+        <a href="#contact" class="btn btn-pine" style="width:100%;justify-content:center">お問い合わせ</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq">
+  <div class="wrap">
+    <div style="text-align:center;margin-bottom:0">
+      <div class="section-tag">FAQ</div>
+      <h2 class="section-title">よくある質問</h2>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          掲載するには審査がありますか？
+          <span class="faq-arrow">▼</span>
+        </div>
+        <div class="faq-a">無料プランは審査不要です。Google Map に登録されているお店であれば、ユーザーが投稿した時点で自動的に掲載されます。有料プランへのアップグレードも即日対応可能です。</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          ネガティブな評価は一般に公開されますか？
+          <span class="faq-arrow">▼</span>
+        </div>
+        <div class="faq-a">いいえ。「気になった点」のフィードバックは一般には公開されません。店舗オーナーと運営にのみ共有されます。一般ユーザーには「このお店にはまだ評価がありません」または評価スコアのみが表示されます。</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          投稿者は特定できますか？
+          <span class="faq-arrow">▼</span>
+        </div>
+        <div class="faq-a">できません。すべての投稿は匿名で処理されます。投稿者のニックネームも店舗には共有されません。これにより、お客様が正直なフィードバックを投稿しやすい環境を作っています。</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          いつでも解約できますか？
+          <span class="faq-arrow">▼</span>
+        </div>
+        <div class="faq-a">はい。月額プランはいつでも解約可能です。解約後は無料プランに自動的に切り替わります。年間プランをご契約の場合は、残存期間分の返金はございませんのでご了承ください。</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          複数店舗を管理できますか？
+          <span class="faq-arrow">▼</span>
+        </div>
+        <div class="faq-a">はい。複数店舗の管理については、スタンダードプランまたは別途お見積もりにて対応可能です。詳しくはお問い合わせください。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta" id="contact">
+  <div class="wrap">
+    <h2>まず、無料で始めてみませんか？</h2>
+    <p>登録は5分。クレジットカード不要。<br>お客様の声が届き始めたら、改善のタイミングがわかります。</p>
+    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+      <a href="mailto:kirein.jp@gmail.com?subject=キレイン店舗登録のお問い合わせ" class="btn btn-mint" style="font-size:15px;padding:16px 36px">
+        📩 無料で問い合わせる
+      </a>
+      <a href="./index.html" class="btn" style="background:rgba(255,255,255,.15);color:#fff;font-size:15px;padding:16px 36px">
+        ユーザー向けサービスを見る
+      </a>
+    </div>
+    <div style="margin-top:20px;font-size:12px;color:#7eada4">
+      メールにて折り返しご連絡いたします（通常1営業日以内）
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="ft">
+      <div style="display:flex;align-items:center;gap:8px;font-family:'Cormorant Garamond',serif;font-size:20px;color:#bcd2cb">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 22s7-6.2 7-12A7 7 0 0 0 5 10c0 5.8 7 12 7 12Z" fill="#25b598"/><circle cx="12" cy="10" r="2.6" fill="#fff"/></svg>
+        Kirein キレイン
+      </div>
+      <div style="display:flex;gap:24px">
+        <a href="./index.html">ユーザー向けサービス</a>
+        <a href="./terms.html">利用規約</a>
+        <a href="./privacy.html">プライバシーポリシー</a>
+        <a href="mailto:kirein.jp@gmail.com">お問い合わせ</a>
+      </div>
+    </div>
+    <div class="copy">© 2026 Kirein（キレイン） — トイレがきれいな店に、行こう。</div>
+  </div>
+</footer>
+
+<script>
+function toggleFaq(el){
+  el.closest('.faq-item').classList.toggle('open');
+}
+</script>
+
+</body>
+</html>

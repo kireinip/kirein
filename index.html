@@ -218,7 +218,7 @@
       </span>
     </a>
     <div class="head-cta">
-      <a class="owner" href="../clear-lp/index.html">店舗オーナーの方へ</a>
+      <a class="owner" href="./owner.html">店舗オーナーの方へ</a>
       <a id="searchBtn" class="btn sm ghost" href="#/">探す</a>
       <a id="postBtn" class="btn sm mint" href="#/post">投稿する</a>
       <a id="userLink" class="btn sm mint" href="#/mypage" style="display:none">マイページ</a>
@@ -797,13 +797,32 @@ function checkPostStatus(shopId){
     .sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
 
   if(posts.length === 0){
-    return { type:'first', points: getCampaignMultiplier() * 50 };
+    // このお店への全ユーザーの投稿数もチェック（= 本当の初投稿か）
+    const allPosts = getPosts().filter(p => p.shop_id === shopId);
+    return { type:'first', points: getCampaignMultiplier() * 50, isVirginStore: allPosts.length === 0 };
   }
   const diffDays = Math.floor((new Date() - new Date(posts[0].created_at)) / 86400000);
   if(diffDays < 30){
     return { type:'blocked', waitDays: 30 - diffDays };
   }
-  return { type:'return', points: 10 };
+  return { type:'return', points: 10, isVirginStore: false };
+}
+
+// 店舗の初投稿ボーナスポイントを計算
+function calcTierPoints(tier, status){
+  const TIER_PTS   = { simple:50, detail:100, photo:200 };
+  const RETURN_PTS = { simple:10, detail:15,  photo:20  };
+
+  if(status.type === 'return') return RETURN_PTS[tier];
+
+  const base = TIER_PTS[tier];
+
+  // 🌟 初投稿 × 写真付きくわしく → 2倍ボーナス
+  if(status.isVirginStore && tier === 'photo'){
+    return base * 2; // 200 × 2 = 400pt
+  }
+
+  return base;
 }
 
 function proceedToPostForm(shopId){
@@ -878,6 +897,16 @@ function proceedToPostForm(shopId){
     </div>
     <div class="mbody">
 
+      <!-- 初投稿バナー -->
+      ${status.isVirginStore ? `
+      <div style="background:linear-gradient(120deg,#fff8e1,#fff3cd);border:1px solid #f0c040;border-radius:10px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
+        <div style="font-size:24px">🌟</div>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#7a6000">このお店への初投稿です！</div>
+          <div style="font-size:11px;color:#9a8030;margin-top:2px">写真付きくわしく投稿で <b style="color:#e67e00;font-size:13px">+400pt（2倍ボーナス）</b> 獲得チャンス！</div>
+        </div>
+      </div>` : ''}
+
       <!-- 投稿レベル選択 -->
       <div style="margin-bottom:20px">
         <div style="font-size:12px;font-weight:700;color:var(--pine);margin-bottom:10px">投稿レベルを選んでください</div>
@@ -886,19 +915,23 @@ function proceedToPostForm(shopId){
             style="padding:12px 6px;border:2px solid var(--mint);border-radius:10px;background:var(--mint);color:#062019;cursor:pointer;text-align:center">
             <div style="font-size:18px;margin-bottom:4px">⚡</div>
             <div style="font-size:11px;font-weight:700">かんたん</div>
-            <div style="font-size:13px;font-weight:700;color:var(--pine);margin-top:2px">+${isReturn?10:TIER_PTS.simple}pt</div>
+            <div style="font-size:13px;font-weight:700;color:var(--pine);margin-top:2px">+${calcTierPoints('simple',status)}pt</div>
           </button>
           <button type="button" id="tier-detail" onclick="selectTier('detail',${shopId})"
             style="padding:12px 6px;border:2px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;text-align:center">
             <div style="font-size:18px;margin-bottom:4px">📋</div>
             <div style="font-size:11px;font-weight:700">くわしく</div>
-            <div style="font-size:13px;font-weight:700;color:var(--pine);margin-top:2px">+${isReturn?15:TIER_PTS.detail}pt</div>
+            <div style="font-size:13px;font-weight:700;color:var(--pine);margin-top:2px">+${calcTierPoints('detail',status)}pt</div>
           </button>
           <button type="button" id="tier-photo" onclick="selectTier('photo',${shopId})"
-            style="padding:12px 6px;border:2px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;text-align:center">
+            style="padding:12px 6px;border:2px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;text-align:center;position:relative">
+            ${status.isVirginStore ? '<div style="position:absolute;top:-8px;right:-4px;background:#e67e00;color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:999px">2倍!</div>' : ''}
             <div style="font-size:18px;margin-bottom:4px">📷</div>
             <div style="font-size:11px;font-weight:700">写真付き</div>
-            <div style="font-size:13px;font-weight:700;color:var(--pine);margin-top:2px">+${isReturn?20:TIER_PTS.photo}pt</div>
+            <div style="font-size:13px;font-weight:700;color:${status.isVirginStore?'#e67e00':'var(--pine)'};margin-top:2px">
+              +${calcTierPoints('photo',status)}pt
+              ${status.isVirginStore ? '<div style="font-size:9px;color:#e67e00">🌟×2ボーナス</div>' : ''}
+            </div>
           </button>
         </div>
       </div>
@@ -967,10 +1000,8 @@ function selectVoice(btn){
 // 投稿レベル選択
 function selectTier(tier, shopId){
   const status = checkPostStatus(shopId);
-  const isReturn = status.type === 'return';
-  const TIER_PTS   = { simple:50,  detail:100, photo:200 };
-  const RETURN_PTS = { simple:10,  detail:15,  photo:20  };
-  const pts = isReturn ? RETURN_PTS[tier] : TIER_PTS[tier];
+  const pts    = calcTierPoints(tier, status);
+  const isBonus = status.isVirginStore && tier === 'photo';
 
   ['simple','detail','photo'].forEach(t => {
     const btn = document.getElementById(`tier-${t}`);
@@ -981,11 +1012,20 @@ function selectTier(tier, shopId){
   });
 
   document.getElementById('postTier').value = tier;
-  document.getElementById('detailSection').style.display = (tier==='detail'||tier==='photo') ? 'block' : 'none';
-  document.getElementById('photoSection').style.display  = tier==='photo'   ? 'block' : 'none';
+  document.getElementById('detailSection').style.display  = (tier==='detail'||tier==='photo') ? 'block' : 'none';
+  document.getElementById('photoSection').style.display   = tier==='photo' ? 'block' : 'none';
   document.getElementById('postFormSubmit').style.display = 'block';
-  document.getElementById('pointNote').innerHTML =
-    `<span style="color:var(--mint);font-weight:700">+${pts}pt</span> 獲得予定${isReturn?' (再来店)':''}`;
+
+  const noteEl = document.getElementById('pointNote');
+  if(isBonus){
+    noteEl.innerHTML = `<span style="color:#e67e00;font-weight:700;font-size:14px">🌟 初投稿×写真付き 2倍ボーナス！ +${pts}pt</span>`;
+    noteEl.style.background = '#fff8e1';
+    noteEl.style.borderLeft = '3px solid #f0c040';
+  } else {
+    noteEl.innerHTML = `<span style="color:var(--mint);font-weight:700">+${pts}pt</span> 獲得予定${status.type==='return'?' (再来店)':''}`;
+    noteEl.style.background = '';
+    noteEl.style.borderLeft = '';
+  }
   document.getElementById('submitBtn').textContent = `投稿する +${pts}pt`;
 
   setupStars();
@@ -1039,13 +1079,10 @@ function submitPost(e, shopId){
     const photoEl     = document.getElementById('photoInput');
     const hasPhoto    = photoEl && photoEl.files && photoEl.files[0];
 
-    const status = checkPostStatus(shopId);
+    const status  = checkPostStatus(shopId);
     if(status.type === 'blocked'){ alert(`あと${status.waitDays}日後に投稿できます`); return; }
 
-    // ティア別ポイント
-    const TIER_PTS   = { simple:50, detail:100, photo:200 };
-    const RETURN_PTS = { simple:10, detail:15,  photo:20  };
-    const tierPts = status.type==='return' ? RETURN_PTS[tier] : TIER_PTS[tier];
+    const tierPts = calcTierPoints(tier, status);
 
     const points = addPost(shopId, cleanliness, air, comment, tierPts, {
       tier, amenity, sink, child, negItems, negComment, hasPhoto: !!hasPhoto
