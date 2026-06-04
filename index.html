@@ -1299,10 +1299,10 @@ const _REMOVED = [
   {id:30,name:"名古屋コーチン 鶏三郎",area:"栄",cat:"焼鳥",rank:"platinum",icon:"🐔",sc:{toilet:4.9,air:4.8,total:4.9},kirei:270,tags:["高級感","無臭","名古屋グルメ"],x:55,y:32,reviews:[{n:"平野",s:5,t:"先週",p:"名古屋コーチン専門店。品質と清潔さは一級品。"}]},
 ]; // _REMOVED 終了
 const ATTRS=["無臭","女性に人気","子ども安心","高級感","デート向き","禁煙"];
-const RANKORDER={black:4,platinum:3,gold:2,silver:1};
-const RANKLBL={black:"Lv.4",platinum:"Lv.3",gold:"Lv.2",silver:"Lv.1"};
-const RANKCHAR={black:"4",platinum:"3",gold:"2",silver:"1"};
-const RANKDESC={black:"毎日プロが守るプレミアム",platinum:"わざわざ使いたい",gold:"気持ちよく使える",silver:"ためらわず使える"};
+const RANKORDER={black:4,platinum:3,gold:2,silver:1,bronze:0};
+const RANKLBL={black:"Lv.4",platinum:"Lv.3",gold:"Lv.2",silver:"Lv.1",bronze:"未認定"};
+const RANKCHAR={black:"4",platinum:"3",gold:"2",silver:"1",bronze:"?"};
+const RANKDESC={black:"毎日プロが守るプレミアム",platinum:"わざわざ使いたい",gold:"気持ちよく使える",silver:"ためらわず使える",bronze:"まだ評価なし"};
 const activeAttrs=new Set();
 
 // populate selects + chips
@@ -1328,6 +1328,17 @@ function filtered(){
   );
   r.sort((a,b)=> sort==='kirei'? b.kirei-a.kirei : sort==='rank'? RANKORDER[b.rank]-RANKORDER[a.rank] : b.sc.total-a.sc.total);
   return r;
+}
+
+function goToPost(storeId){
+  // 探すページのカードから直接投稿ページへ遷移
+  const id = isNaN(storeId) ? storeId : Number(storeId);
+  currentSelectedStore = STORES.find(s => s.id == id) || null;
+  window.location.hash = '/post';
+  // 投稿ページ表示後に店舗選択済み状態にする
+  setTimeout(() => {
+    if(currentSelectedStore) proceedToPostForm(currentSelectedStore.id);
+  }, 400);
 }
 
 function getKireinPosts(shopId){
@@ -1396,7 +1407,7 @@ function render(){
         </div>
         ${scoreHtml}
         ${quoteHtml}
-        <button style=”margin-top:8px;width:100%;padding:6px;background:var(--mint);color:#062019;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer” onclick=”event.stopPropagation();window.location.hash='/post';setTimeout(()=>selectStoreForPost(${s.id}),300)”>
+        <button style=”margin-top:8px;width:100%;padding:6px;background:var(--mint);color:#062019;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer” data-sid=”${s.id}” onclick=”event.stopPropagation();goToPost(this.getAttribute('data-sid'))”>
           🚻 このお店を評価する +${getCampaignMultiplier()*50}pt
         </button>
       </div>
