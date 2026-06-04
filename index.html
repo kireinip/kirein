@@ -10,36 +10,27 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@600;700&family=Cormorant+Garamond:wght@600&display=swap" rel="stylesheet" />
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDRfloVijkhdUhF9v_DG7O3JV17Fqd9V7w&libraries=places"></script>
 
-<!-- Firebase SDK -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, serverTimestamp }
-    from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
-
+<!-- Firebase SDK (compat版 - 既存コードと干渉しない) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
   const firebaseConfig = {
     apiKey: "AIzaSyBmd6J3uyIEkyybGVLlMR5_p9LLiHZQk3U",
     authDomain: "kirein-ac148.firebaseapp.com",
     projectId: "kirein-ac148",
     storageBucket: "kirein-ac148.firebasestorage.app",
     messagingSenderId: "512365581418",
-    appId: "1:512365581418:web:9686273005ff1b4dbf6613",
-    measurementId: "G-D0P93RNF8X"
+    appId: "1:512365581418:web:9686273005ff1b4dbf6613"
   };
 
-  const app = initializeApp(firebaseConfig);
-  const db  = getFirestore(app);
-
-  // Firestore にアクセスできるようグローバルに公開
-  window.db = db;
-  window.fsCollection  = collection;
-  window.fsAddDoc      = addDoc;
-  window.fsGetDocs     = getDocs;
-  window.fsQuery       = query;
-  window.fsWhere       = where;
-  window.fsOrderBy     = orderBy;
-  window.fsTimestamp   = serverTimestamp;
-
-  console.log('✅ Firebase 接続完了');
+  try {
+    firebase.initializeApp(firebaseConfig);
+    window.db = firebase.firestore();
+    console.log('✅ Firebase 接続完了');
+  } catch(e) {
+    console.warn('⚠️ Firebase 初期化エラー（オフラインでも動作します）:', e.message);
+    window.db = null;
+  }
 </script>
 <style>
   :root{
@@ -479,13 +470,13 @@ function getPosts(){
   return JSON.parse(localStorage.getItem('kirein_posts')) || [];
 }
 
-// Firestore に投稿を保存（非同期）
+// Firestore に投稿を保存（非同期・compat版）
 async function savePostToFirestore(post){
   if(!window.db) return;
   try {
-    await window.fsAddDoc(window.fsCollection(window.db, 'posts'), {
+    await window.db.collection('posts').add({
       ...post,
-      created_at: window.fsTimestamp() // Firestore のサーバー時刻
+      created_at: firebase.firestore.FieldValue.serverTimestamp()
     });
     console.log('✅ Firestore に保存完了');
   } catch(e) {
@@ -493,15 +484,13 @@ async function savePostToFirestore(post){
   }
 }
 
-// Firestore から特定店舗の投稿を取得
+// Firestore から特定店舗の投稿を取得（compat版）
 async function getPostsFromFirestore(shopId){
   if(!window.db) return [];
   try {
-    const q = window.fsQuery(
-      window.fsCollection(window.db, 'posts'),
-      window.fsWhere('shop_id', '==', String(shopId))
-    );
-    const snap = await window.fsGetDocs(q);
+    const snap = await window.db.collection('posts')
+      .where('shop_id', '==', String(shopId))
+      .get();
     return snap.docs.map(d => ({ id: d.id, ...d.data() }));
   } catch(e) {
     console.error('❌ Firestore 取得エラー:', e);
