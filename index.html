@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>キレイン｜トイレがきれいならその店は3つ星！</title>
-<meta name=”description” content=”トイレがきれいならその店は3つ星！来店ユーザーのトイレ評価で、本当に清潔なお店だけが見つかる。名古屋全域対応。” />
+<title>キレイン｜トイレがきれいな店に、行こう。</title>
+<meta name=”description” content=”トイレがきれいな店に、行こう。来店ユーザーのトイレ評価で、本当に清潔なお店だけが見つかる。名古屋全域対応。” />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@600;700&family=Cormorant+Garamond:wght@600&display=swap" rel="stylesheet" />
@@ -44,7 +44,9 @@
   .btn.ghost:hover{background:var(--mint-soft)}
 
   /* hero search */
-  .hero{background:radial-gradient(120% 120% at 80% -10%,#10463c,#0b2c27 60%,#082420);color:#fff;padding:48px 0 30px}
+  .hero{background:radial-gradient(120% 120% at 80% -10%,#10463c,#0b2c27 60%,#082420);color:#fff;padding:48px 0 30px;position:relative;overflow:hidden}
+  .hero-bg{position:absolute;inset:0;background-image:url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1400&auto=format&fit=crop&q=60');background-size:cover;background-position:center;opacity:0.13;z-index:0}
+  .hero .wrap{position:relative;z-index:1}
   .hero h1{font-size:clamp(26px,4vw,44px);font-weight:700;letter-spacing:.01em}
   .hero h1 .ac{color:var(--mint)}
   .hero p.lead{margin-top:12px;color:#cfe2dc;font-size:14.5px;max-width:34em}
@@ -212,7 +214,7 @@
       </span>
       <span style="display:flex;flex-direction:column;line-height:1.15">
         <span class="jp">キレイン</span>
-        <span class="sub">トイレが清潔なお店検索</span>
+        <span class="sub">🚻 トイレが清潔なお店検索</span>
       </span>
     </a>
     <div class="head-cta">
@@ -227,8 +229,9 @@
 
 <!-- HERO + SEARCH -->
 <section class="hero">
+  <div class="hero-bg"></div>
   <div class="wrap">
-    <h1>トイレがきれいなら、<br><span class=”ac”>その店は3つ星。</span></h1>
+    <h1>トイレがきれいな店に、<br><span class=”ac”>行こう。</span></h1>
     <p class=”lead”>来店したユーザーがトイレを評価。本当に清潔なお店だけが見つかる。名古屋全域対応。</p>
 
     <div class="searchbar">
@@ -276,6 +279,42 @@
     <div class="list" id="list"></div>
     <div class="mapwrap">
       <div id="map" style="width: 100%; height: 100%;"></div>
+    </div>
+  </div>
+
+  <!-- 使い方セクション -->
+  <div style="padding:60px 0 40px">
+    <h2 style="text-align:center;font-size:22px;color:var(--pine);margin-bottom:8px">キレインの使い方</h2>
+    <p style="text-align:center;color:var(--muted);font-size:14px;margin-bottom:40px">3ステップで、清潔なお店を見つける・投稿する</p>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px">
+
+      <div style="text-align:center">
+        <div style="border-radius:16px;overflow:hidden;margin-bottom:16px;height:180px;position:relative">
+          <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=70" alt="お店を探す" style="width:100%;height:100%;object-fit:cover">
+          <div style="position:absolute;top:12px;left:12px;background:var(--mint);color:#fff;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:16px">1</div>
+        </div>
+        <h3 style="font-size:15px;color:var(--pine);margin-bottom:6px">お店を探す</h3>
+        <p style="font-size:12px;color:var(--muted);line-height:1.7">エリアや業態で絞り込み。トイレの評価が高いお店だけを探せる。</p>
+      </div>
+
+      <div style="text-align:center">
+        <div style="border-radius:16px;overflow:hidden;margin-bottom:16px;height:180px;position:relative">
+          <img src="https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?w=600&auto=format&fit=crop&q=70" alt="トイレを評価" style="width:100%;height:100%;object-fit:cover">
+          <div style="position:absolute;top:12px;left:12px;background:var(--mint);color:#fff;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:16px">2</div>
+        </div>
+        <h3 style="font-size:15px;color:var(--pine);margin-bottom:6px">トイレを評価する</h3>
+        <p style="font-size:12px;color:var(--muted);line-height:1.7">来店したら清潔さを5段階で投稿。ポイントをためてレポーターへ。</p>
+      </div>
+
+      <div style="text-align:center">
+        <div style="border-radius:16px;overflow:hidden;margin-bottom:16px;height:180px;position:relative">
+          <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&auto=format&fit=crop&q=70" alt="清潔な店が見つかる" style="width:100%;height:100%;object-fit:cover">
+          <div style="position:absolute;top:12px;left:12px;background:var(--mint);color:#fff;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:16px">3</div>
+        </div>
+        <h3 style="font-size:15px;color:var(--pine);margin-bottom:6px">清潔な店が見つかる</h3>
+        <p style="font-size:12px;color:var(--muted);line-height:1.7">みんなの評価が積み重なって、本当に清潔なお店が浮かび上がる。</p>
+      </div>
+
     </div>
   </div>
 
