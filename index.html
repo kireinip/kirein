@@ -26,8 +26,9 @@
 
   try {
     firebase.initializeApp(firebaseConfig);
-    window.db   = firebase.firestore();
-    window.auth = firebase.auth();
+    window.db      = firebase.firestore();
+    window.auth    = firebase.auth();
+    window.firebase = firebase; // Googleログインで使用
 
     // ログイン状態を監視
     window.auth.onAuthStateChanged(async (firebaseUser) => {
@@ -71,28 +72,6 @@
     window.db = null; window.auth = null;
   }
 
-  // Googleログイン処理（リダイレクト方式）
-  function handleLoginClick(){
-    const user = getUserData();
-    if(user){
-      if(confirm(`${user.nickname} さん、ログアウトしますか？`)){
-        if(window.auth) window.auth.signOut();
-        localStorage.removeItem('kirein_user');
-        location.reload();
-      }
-      return;
-    }
-    if(window.auth){
-      // リダイレクト方式（ポップアップより安定）
-      const provider = new firebase.auth.GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
-      localStorage.setItem('kirein_login_redirect', '1'); // リダイレクト中フラグ
-      window.auth.signInWithRedirect(provider);
-    } else {
-      fallbackNicknameLogin();
-    }
-  }
-
   // リダイレクト後の結果を処理
   if(window.auth){
     window.auth.getRedirectResult().then(result => {
@@ -102,14 +81,45 @@
       }
     }).catch(err => {
       console.warn('リダイレクトログインエラー:', err.message);
-      localStorage.removeItem('kirein_login_redirect');
     });
   }
+</script>
 
-  function fallbackNicknameLogin(){
-    // Chrome がプロンプトをブロックするのでモーダルで入力
-    document.getElementById('nicknameModal').style.display = 'flex';
+<!-- ログイン関数（グローバルスコープで定義） -->
+<script>
+function handleLoginClick(){
+  const user = getUserData();
+  if(user){
+    if(confirm(`${user.nickname} さん、ログアウトしますか？`)){
+      if(window.auth) window.auth.signOut();
+      localStorage.removeItem('kirein_user');
+      location.reload();
+    }
+    return;
   }
+  // Googleログイン（リダイレクト方式）
+  if(window.auth && window.firebase){
+    try{
+      const provider = new firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      window.auth.signInWithRedirect(provider);
+    }catch(e){
+      console.warn('Googleログイン失敗:', e.message);
+      showNicknameModal();
+    }
+  } else {
+    showNicknameModal();
+  }
+}
+
+function showNicknameModal(){
+  document.getElementById('nicknameModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('nicknameInput')?.focus(), 100);
+}
+
+function fallbackNicknameLogin(){
+  showNicknameModal();
+}
 </script>
 <style>
   :root{
