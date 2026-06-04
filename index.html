@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>キレイン｜トイレがきれいな店を探す｜その不安、消します。</title>
-<meta name="description" content="トイレが清潔・無臭・子ども安心で絞り込めるお店検索。プロの覆面調査と利用者のおすすめで“安心して入れる店”だけを掲載。トイレが目的になる店が見つかる。キレイン認証店掲載。" />
+<title>キレイン｜トイレがきれいならその店は3つ星！</title>
+<meta name=”description” content=”トイレがきれいならその店は3つ星！来店ユーザーのトイレ評価で、本当に清潔なお店だけが見つかる。名古屋全域対応。” />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@600;700&family=Cormorant+Garamond:wght@600&display=swap" rel="stylesheet" />
@@ -228,8 +228,8 @@
 <!-- HERO + SEARCH -->
 <section class="hero">
   <div class="wrap">
-    <h1>トイレきれいかな？<br>その不安、<span class="ac">消します。</span></h1>
-    <p class=”lead”>名古屋市の清潔なお店を探す。実際に来店したユーザーのトイレ評価で、安心して入れるお店が見つかる。栄・名駅・千種・大須・熱田など名古屋全域対応。</p>
+    <h1>トイレがきれいなら、<br><span class=”ac”>その店は3つ星。</span></h1>
+    <p class=”lead”>来店したユーザーがトイレを評価。本当に清潔なお店だけが見つかる。名古屋全域対応。</p>
 
     <div class="searchbar">
       <div class="fieldset">
@@ -1119,10 +1119,21 @@ async function searchNearbyRestaurants(){
   const loc = await getHighAccuracyLocation();
   if(!loc){
     listContainer.innerHTML = `
-      <div style="text-align:center;padding:24px">
-        <div style="font-size:28px;margin-bottom:10px">🚫</div>
-        <div style="color:var(--ink);font-weight:700;margin-bottom:8px">位置情報を取得できませんでした</div>
-        <div style="color:var(--muted);font-size:12px">ブラウザの設定で位置情報を許可してください</div>
+      <div style="padding:20px">
+        <div style="text-align:center;margin-bottom:16px">
+          <div style="font-size:36px;margin-bottom:8px">📵</div>
+          <div style="font-weight:700;color:var(--ink);margin-bottom:6px">位置情報が取得できませんでした</div>
+        </div>
+        <div style="background:#fff8e1;border-radius:10px;padding:14px;font-size:12px;color:#7a6000;margin-bottom:16px;line-height:1.8">
+          <b>許可する方法：</b><br>
+          📱 iPhone: 設定 → Safari → 位置情報 → 許可<br>
+          🤖 Android: ブラウザの🔒アイコン → 位置情報 → 許可<br>
+          💻 PC: アドレスバーの🔒 → 位置情報 → 許可
+        </div>
+        <div style="color:var(--muted);font-size:12px;text-align:center;margin-bottom:12px">または店名で検索してください 👇</div>
+        <button onclick="document.getElementById('googlePlacesInput').focus()" style="width:100%;padding:12px;background:var(--pine);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px">
+          🔍 店名で検索する
+        </button>
       </div>`;
     return;
   }
@@ -1213,13 +1224,67 @@ function searchWithExpandingRadius(loc, radii, listContainer){
 
     } else {
       listContainer.innerHTML = `
-        <div style="text-align:center;padding:24px">
-          <div style="font-size:32px;margin-bottom:10px">🔍</div>
-          <div style="font-weight:700;margin-bottom:8px">近くにお店が見つかりませんでした</div>
-          <div style="color:var(--muted);font-size:12px">店名で検索してみてください</div>
+        <div style="padding:16px">
+          <div style="text-align:center;margin-bottom:14px">
+            <div style="font-size:32px;margin-bottom:8px">🗺️</div>
+            <div style="font-weight:700;color:var(--ink);margin-bottom:4px">近くにお店が見つかりませんでした</div>
+            <div style="color:var(--muted);font-size:12px">以下の方法でお試しください</div>
+          </div>
+          <div style="display:grid;gap:8px">
+            <button onclick="searchNearbyRestaurants()" style="padding:11px;background:var(--mint);color:#062019;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px">
+              📍 もう一度 GPS で探す
+            </button>
+            <button onclick="document.getElementById('googlePlacesInput').focus()" style="padding:11px;background:var(--pine);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px">
+              🔍 店名で検索する
+            </button>
+            <button onclick="showManualInput()" style="padding:11px;background:var(--bg-soft);color:var(--pine);border:1px solid var(--line);border-radius:8px;font-weight:700;cursor:pointer;font-size:13px">
+              ✏️ 店名を直接入力する
+            </button>
+          </div>
         </div>`;
     }
   });
+}
+
+function showManualInput(){
+  const listContainer = document.getElementById('storeListContainer');
+  listContainer.innerHTML = `
+    <div style="padding:16px">
+      <div style="font-size:13px;font-weight:700;color:var(--pine);margin-bottom:10px">✏️ お店を手動で登録</div>
+      <input type="text" id="manualShopName" placeholder="お店の名前を入力" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:14px;margin-bottom:8px">
+      <button onclick="registerManualShop()" style="width:100%;padding:12px;background:var(--mint);color:#062019;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px">
+        このお店で投稿する →
+      </button>
+      <div style="color:var(--muted);font-size:11px;text-align:center;margin-top:10px">
+        Google Map に登録されていないお店でも投稿できます
+      </div>
+    </div>`;
+  setTimeout(() => document.getElementById('manualShopName')?.focus(), 100);
+}
+
+function registerManualShop(){
+  const name = document.getElementById('manualShopName')?.value?.trim();
+  if(!name){ alert('お店の名前を入力してください'); return; }
+
+  // 新規店舗として登録
+  const newStore = {
+    id: Date.now(),
+    name: name,
+    area: '名古屋',
+    cat: '飲食店',
+    rank: 'bronze',
+    icon: '🍽️',
+    sc: { toilet: 0, air: 0, total: 0 },
+    kirei: 0,
+    tags: [],
+    lat: userLocation?.lat || 35.17,
+    lng: userLocation?.lng || 136.88,
+    x: 50, y: 50,
+    reviews: [],
+    address: ''
+  };
+  STORES.push(newStore);
+  selectStoreForPost(newStore.id);
 }
 
 function renderNearbyList(stores, loc, radius, container){
