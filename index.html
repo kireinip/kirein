@@ -83,6 +83,50 @@
       console.warn('リダイレクトログインエラー:', err.message);
     });
   }
+
+  // ============================================
+  // クエリパラメータ処理（LINE リッチメニュー対応）
+  // ============================================
+  const urlParams = new URLSearchParams(window.location.search);
+  const mode = urlParams.get('mode');
+
+  window.addEventListener('DOMContentLoaded', () => {
+    if (mode === 'post') {
+      // 投稿モード：投稿フロームをスクロール表示
+      setTimeout(() => {
+        const postSection = document.querySelector('form') || document.querySelector('[id*="post"]');
+        if (postSection) {
+          postSection.scrollIntoView({ behavior: 'smooth' });
+          postSection.focus();
+        }
+      }, 800);
+      console.log('📱 投稿モード開始');
+
+    } else if (mode === 'search_nearby') {
+      // GPS検索モード：位置情報を取得して近くの店を検索
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            window.userLat = latitude;
+            window.userLng = longitude;
+            console.log('📍 現在地取得:', latitude, longitude);
+
+            // 地図があれば現在地に移動
+            if (window.map) {
+              window.map.setCenter({ lat: latitude, lng: longitude });
+              window.map.setZoom(15);
+            }
+          },
+          (error) => {
+            console.warn('⚠️ 位置情報取得エラー:', error.message);
+            alert('位置情報の取得に失敗しました。手動で店舗を検索してください。');
+          }
+        );
+      }
+      console.log('📍 GPS検索モード開始');
+    }
+  });
 </script>
 
 <!-- ログイン関数（グローバルスコープで定義） -->
@@ -631,6 +675,10 @@ function addPost(shopId, cleanliness, air, comment, fixedPoints, extra){
   posts.push({
     post_id: 'p_' + Date.now(),
     shop_id: shopId,
+    // 全デバイスで安定する識別子（店舗ダッシュボードはこれをキーに集計）
+    place_id: extra?.placeId || null,
+    shop_name: extra?.shopName || null,
+    user_uid: extra?.userUid || null,  // ← 投稿者UID（ネガティブ情報のアクセス制御用）
     tier: extra?.tier || 'simple',
     // 公開データ
     cleanliness_rating: cleanliness,
@@ -1294,13 +1342,15 @@ function submitPost(e, shopId){
 
     const tierPts = calcTierPoints(tier, status);
 
+    // 集計用の安定キー（placeId）と店名を投稿に添付
+    const shop = STORES.find(s => s.id === shopId);
+
     const points = addPost(shopId, cleanliness, air, comment, tierPts, {
-      tier, amenity, sink, child, negItems, negComment, hasPhoto: !!hasPhoto
+      tier, amenity, sink, child, negItems, negComment, hasPhoto: !!hasPhoto,
+      placeId: shop?.placeId || null, shopName: shop?.name || null,
+      userUid: user?.uid || null
     });
     const updatedUser = updateUserPoints(points);
-
-    // kirei カウントを安全に更新
-    const shop = STORES.find(s => s.id === shopId);
     if(shop) shop.kirei += 1;
 
     // render() は探すページが表示中の時だけ呼ぶ
