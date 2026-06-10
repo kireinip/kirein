@@ -1240,7 +1240,12 @@ function proceedToPostForm(shopId){
         <textarea id="postComment" rows="2" placeholder="ひとことコメント（任意）" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;font-family:inherit;font-size:13px;resize:none;margin-bottom:12px"></textarea>
 
         <div id="pointNote" class="note" style="margin-bottom:8px"></div>
-        <button class="btn mint" type="submit" id="submitBtn" style="width:100%;justify-content:center;padding:13px">投稿する</button>
+        <button class="btn mint" type="submit" id="submitBtn" style="width:100%;justify-content:center;padding:13px;margin-bottom:8px">投稿する</button>
+
+        <hr style="border:none;border-top:1px solid var(--line);margin:12px 0">
+        <a href="./owner.html?shop_name=${shop.name}&place_id=${shop.placeId}" class="btn ghost" style="width:100%;justify-content:center;padding:12px;font-size:13px;color:var(--pine);border:1px solid var(--line)">
+          🏪 このお店を登録する（店舗オーナー様向け）
+        </a>
       </form>
     </div>`;
 
