@@ -2305,14 +2305,11 @@ async function searchByGPS(){
 }
 
 function goToPost(storeId){
-  // 探すページのカードから直接投稿ページへ遷移
-  const id = isNaN(storeId) ? storeId : Number(storeId);
-  currentSelectedStore = STORES.find(s => s.id == id) || null;
-  window.location.hash = '/post';
-  // 投稿ページ表示後に店舗選択済み状態にする
-  setTimeout(() => {
-    if(currentSelectedStore) proceedToPostForm(currentSelectedStore.id);
-  }, 400);
+  // 探すページのカードから直接投稿フロームを表示
+  const user = getUserData();
+  if(!user) return showLoginModal();
+  closeModal();
+  showPostModal();
 }
 
 function getKireinPosts(shopId){
