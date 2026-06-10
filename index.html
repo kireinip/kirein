@@ -2763,6 +2763,18 @@ function loadGoogleReviews(placeId){
 function closeModal(){document.getElementById('overlay').classList.remove('open');}
 
 // お店を評価する（ログインチェック → proceedToPostForm へ直接）
+// Haversine で2点間の距離（m）を返す
+function calcDistanceM(lat1, lng1, lat2, lng2){
+  const R = 6371000;
+  const dLat = (lat2-lat1)*Math.PI/180;
+  const dLng = (lng2-lng1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 +
+            Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+const GPS_RADIUS = 300; // 評価できる半径（m）
+
 function evaluateStore(storeId){
   const user = getUserData();
   if(!user){
@@ -2770,8 +2782,62 @@ function evaluateStore(storeId){
     showLoginModal();
     return;
   }
-  closeModal();
-  proceedToPostForm(storeId);
+  const shop = STORES.find(s => s.id === storeId);
+
+  // 店舗の座標がない場合はGPSチェックをスキップ
+  if(!shop?.lat || !shop?.lng){
+    closeModal();
+    proceedToPostForm(storeId);
+    return;
+  }
+
+  // GPSで現在地を取得してから距離チェック
+  if(!navigator.geolocation){
+    closeModal();
+    proceedToPostForm(storeId);
+    return;
+  }
+
+  // ローディング表示
+  const btnEl = document.querySelector('#modal .btn.mint');
+  if(btnEl){ btnEl.textContent = '📡 現在地を確認中...'; btnEl.disabled = true; }
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const dist = calcDistanceM(pos.coords.latitude, pos.coords.longitude, shop.lat, shop.lng);
+      if(dist <= GPS_RADIUS){
+        // OK: 範囲内
+        closeModal();
+        proceedToPostForm(storeId);
+      } else {
+        // NG: 範囲外 → エラーモーダル
+        const distTxt = dist < 1000 ? `${Math.round(dist)}m` : `${(dist/1000).toFixed(1)}km`;
+        document.getElementById('modal').innerHTML = `
+          <div class="mhead">
+            <button class="close" onclick="closeModal()">×</button>
+            <h3>${shop.name}</h3>
+            <div class="mmeta">${shop.area}・${shop.cat}</div>
+          </div>
+          <div class="mbody" style="text-align:center;padding:30px">
+            <div style="font-size:52px;margin:10px 0">📍</div>
+            <div style="font-size:18px;font-weight:700;color:var(--pine);margin:16px 0">お店に近づいてから評価してください</div>
+            <div style="background:var(--bg-soft);border-radius:12px;padding:16px;margin:16px 0;font-size:13px;color:var(--muted);line-height:1.9">
+              評価できるのは<b style="color:var(--pine)">お店から ${GPS_RADIUS}m以内</b>のみです。<br>
+              現在の距離：<b style="color:#e65100">${distTxt}</b><br>
+              <span style="font-size:11px">実際に来店してから評価することで<br>信頼性の高いデータが集まります 🚻</span>
+            </div>
+            <button class="btn ghost" onclick="closeModal()" style="width:100%;justify-content:center;padding:13px">閉じる</button>
+          </div>`;
+        document.getElementById('overlay').classList.add('open');
+      }
+    },
+    () => {
+      // GPS取得失敗 → 位置情報拒否の場合はスキップして続行
+      closeModal();
+      proceedToPostForm(storeId);
+    },
+    { timeout: 8000, maximumAge: 60000 }
+  );
 }
 // submitReview は submitPost で置き換え済み
 
