@@ -749,8 +749,15 @@ function submitNickname(){
   updateUIForLogin();
   document.getElementById('nicknameModal').style.display = 'none';
   document.getElementById('nicknameInput').value = '';
-  // ニックネーム設定後、投稿フォームへ進む
-  showPostModal();
+  // ニックネーム設定後、ペンディング中の店舗評価 or 汎用投稿フォームへ進む
+  const pendingId = window._pendingStoreId;
+  window._pendingStoreId = null;
+  if(pendingId){
+    closeModal();
+    proceedToPostForm(pendingId);
+  } else {
+    showPostModal();
+  }
 }
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -2446,13 +2453,25 @@ function openModal(id){
         ${s.reviews.map(rv=>`<div class="rv"><div class="rt"><span>${rv.n}</span><span>${rv.t}</span></div><div class="rs">${star(rv.s)}</div><p>${rv.p}</p></div>`).join('')}
       </div>
 
-      <div class="msec-t">このお店をおすすめする</div>
-      <button class="btn mint" style="width:100%" onclick="closeModal();showPostModal()">ここから投稿する（ポイント獲得）→</button>
-      <div class="note" style="margin-top:12px">💡 ログインして投稿するとポイント獲得！Lv.1レポーターを目指して1件¥1,000の報告書報酬の調査員も夢じゃない。</div>
+      <div class="msec-t">このお店を評価する</div>
+      <button class="btn mint" style="width:100%;font-size:15px;padding:14px" onclick="evaluateStore(${s.id})">🚻 このお店のトイレを評価する → ポイント獲得</button>
+      <div class="note" style="margin-top:12px">💡 評価するとポイント獲得！ランクアップで調査員報酬（1件¥1,000）も狙えます。</div>
     </div>`;
   document.getElementById('overlay').classList.add('open');
 }
 function closeModal(){document.getElementById('overlay').classList.remove('open');}
+
+// お店を評価する（ログインチェック → proceedToPostForm へ直接）
+function evaluateStore(storeId){
+  const user = getUserData();
+  if(!user){
+    window._pendingStoreId = storeId;
+    showLoginModal();
+    return;
+  }
+  closeModal();
+  proceedToPostForm(storeId);
+}
 // submitReview は submitPost で置き換え済み
 
 // Google Maps 初期化
@@ -2468,14 +2487,7 @@ window.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 // ── カード一覧クリック（イベントデリゲーション）──────────────────────
 // render() のたびに付け直す必要がないよう、#list に1回だけ登録する
 document.getElementById('list').addEventListener('click', function(e) {
-  // 「このお店を評価する」ボタン
-  const btn = e.target.closest('.post-btn');
-  if (btn) {
-    e.stopPropagation();
-    showPostModal();
-    return;
-  }
-  // カード本体
+  // カード本体・「評価する」ボタンどちらもモーダルを開く
   const card = e.target.closest('.card[data-id]');
   if (card) {
     const id = card.getAttribute('data-id');
