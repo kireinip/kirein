@@ -2366,8 +2366,8 @@ function render(){
       : '';
 
     return `
-    <div class=”card” data-id=”${s.id}” onclick=”console.log('店舗クリック:', ${s.id}); openModal(${s.id}); event.stopPropagation();”
-         onmouseenter=”hl(${s.id},true)” onmouseleave=”hl(${s.id},false)”>
+    <div class=”card” data-id=”${s.id}” style=”cursor:pointer” onclick=”openModal(this.getAttribute('data-id'))”
+         onmouseenter=”hl(this.getAttribute('data-id'),true)” onmouseleave=”hl(this.getAttribute('data-id'),false)”>
       <div class=”thumb”>
         <span class=”rankbadge” style=”background:${certColor||'#ccc'}”>
           ${RANKCHAR[rank]||'?'}
