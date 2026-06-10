@@ -2555,6 +2555,10 @@ async function searchByGPS(){
 
   gpsSearchActive    = true;
   gpsSearchLocation  = loc;
+  // GPS ON時はエリア・業態フィルターをリセット
+  areaSel.value = '';
+  catSel.value  = '';
+  document.getElementById('q').value = '';
   btn.style.background = 'rgba(37,181,152,.35)';
   btn.style.borderColor = 'var(--mint)';
   btn.innerHTML = `✅ 現在地から探している（解除する）`;
