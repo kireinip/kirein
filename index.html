@@ -1396,7 +1396,16 @@ function submitPost(e, shopId){
           <div style="font-size:36px;font-weight:700;color:var(--pine)">${updatedUser.total_points}pt</div>
           <div style="margin-top:8px;color:var(--muted);font-size:13px">Lv.${updatedUser.current_lv} ${['ビジター','認定レポーター','見習い調査員','公認調査員'][updatedUser.current_lv]}</div>
         </div>
-        <div style="color:var(--muted);font-size:12px;margin-bottom:16px">投稿ありがとうございます！</div>
+        <div style="color:var(--muted);font-size:12px;margin-bottom:12px">投稿ありがとうございます！</div>
+        ${updatedUser.current_lv < 3 ? `
+        <div style="background:#fff8e1;border:1px solid #f0c040;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#7a6000;display:flex;align-items:center;gap:8px">
+          <span style="font-size:16px">🎁</span>
+          <span><b>公認調査員（Lv.3）になるといいことあります！</b><br>特典は近日公開 → 投稿を続けて目指そう！</span>
+        </div>` : `
+        <div style="background:#e8f5e9;border:1px solid #4caf50;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#1b5e20;display:flex;align-items:center;gap:8px">
+          <span style="font-size:16px">👑</span>
+          <span><b>公認調査員として特典を受け取る資格があります！</b><br>詳細は近日公開予定です。</span>
+        </div>`}
         <button class="btn mint" onclick="closeModal();window.location.hash='/mypage'" style="width:100%;justify-content:center;padding:13px">マイページで確認する →</button>
       </div>`;
     document.getElementById('overlay').classList.add('open');
@@ -1434,6 +1443,21 @@ function showMyPage(){
         <div class="progress-bar">
           <div class="progress-fill" style="width:${lvPercent}%"></div>
         </div>
+        ${user.current_lv < 3 ? `
+        <div style="margin-top:14px;background:linear-gradient(120deg,#fff8e1,#fff3cd);border:1px solid #f0c040;border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:10px">
+          <div style="font-size:22px">🎁</div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:#7a6000">公認調査員（Lv.3）になるといいことあります！</div>
+            <div style="font-size:11px;color:#a08000;margin-top:2px">特典内容は近日公開予定 → 今すぐ投稿して先を目指そう 🚀</div>
+          </div>
+        </div>` : `
+        <div style="margin-top:14px;background:linear-gradient(120deg,#e8f5e9,#c8e6c9);border:1px solid #4caf50;border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:10px">
+          <div style="font-size:22px">👑</div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:#1b5e20">おめでとうございます！公認調査員に認定されました</div>
+            <div style="font-size:11px;color:#2e7d32;margin-top:2px">特典の詳細は近日公開予定です。お楽しみに！</div>
+          </div>
+        </div>`}
         <div class="mypage-stats">
           <div class="stat">
             <span class="num">${user.post_count}</span>
@@ -1463,11 +1487,22 @@ function showMyPage(){
       </div>
 
       <div class="mypage-card">
-        <h2>🎯 Lv.1「認定レポーター」への道</h2>
+        <h2>🎯 レベルアップへの道</h2>
         <div style="font-size:13px;line-height:1.8">
-          <div style="margin:8px 0">✓ ポイント: ${user.total_points}/500pt</div>
-          <div style="margin:8px 0">ビジターから認定レポーターへ昇格すると、投稿時のポイントが増加します。</div>
-          ${user.total_points >= 500 ? '<div style="margin:16px 0;color:var(--mint);font-weight:700">🎉 あなたは既に Lv.1 認定レポーターです！</div>' : ''}
+          ${[
+            { lv:1, label:'認定レポーター', pts:1000 },
+            { lv:2, label:'見習い調査員',   pts:5000 },
+            { lv:3, label:'公認調査員',     pts:10000 }
+          ].map(r => `
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)">
+              <div style="font-size:18px">${user.current_lv >= r.lv ? '✅' : '⬜'}</div>
+              <div style="flex:1">
+                <span style="font-weight:700;color:${user.current_lv >= r.lv ? 'var(--mint)' : 'var(--ink)'}">Lv.${r.lv} ${r.label}</span>
+                <span style="color:var(--muted);font-size:12px;margin-left:8px">${r.pts.toLocaleString()}pt〜</span>
+              </div>
+              ${r.lv === 3 ? '<div style="font-size:11px;background:#fff8e1;color:#7a6000;padding:2px 8px;border-radius:999px;font-weight:700">🎁 特典あり</div>' : ''}
+            </div>
+          `).join('')}
         </div>
       </div>
 
