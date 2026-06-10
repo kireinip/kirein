@@ -1078,8 +1078,9 @@ function createNewStore(shopName, lat, lng){
 }
 
 function checkPostStatus(shopId){
+  const currentUid = window.auth?.currentUser?.uid || getUserData()?.uid;
   const posts = getPosts()
-    .filter(p => p.shop_id === shopId)
+    .filter(p => p.shop_id === shopId && (!currentUid || p.user_uid === currentUid))
     .sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
 
   if(posts.length === 0){
@@ -2661,14 +2662,14 @@ function openModal(id){
       <div class="mmeta">${s.area}・${s.cat}　|　👍 ${s.kirei} 人が「きれい！」${(()=>{const sc=calcScore(s.id);return sc?.repeatCount>0?`　<span style="background:#fff3e0;color:#e65100;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px">🔄 トイレリピート ${sc.repeatCount}人</span>`:'';})()}</div>
     </div>
     <div class="mbody">
-      <div class="scoregrid">
+      <div class="scoregrid" id="modal-score-grid">
         <div class="b"><small>トイレ清潔</small><b>${s.sc.toilet.toFixed(1)}</b></div>
         <div class="b"><small>空気・無臭</small><b>${s.sc.air.toFixed(1)}</b></div>
         <div class="b"><small>総合</small><b>${s.sc.total.toFixed(1)}</b></div>
       </div>
       <div class="tags" style="margin-bottom:6px">${s.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
 
-      ${(()=>{
+      <div id="modal-kirein-photos">${(()=>{
         const photos = getKireinPosts(s.id).filter(p=>p.photo_url).slice(-6);
         if(!photos.length) return '';
         return `
@@ -2679,9 +2680,9 @@ function openModal(id){
                 style="width:calc(33% - 6px);aspect-ratio:1;object-fit:cover;border-radius:10px;cursor:pointer"
                 onclick="window.open('${p.photo_url}','_blank')">`).join('')}
           </div>`;
-      })()}
+      })()}</div>
       <div class="msec-t">利用者のおすすめ</div>
-      <div class="reviews">
+      <div id="modal-kirein-reviews" class="reviews">
         ${s.reviews.map(rv=>`<div class="rv"><div class="rt"><span>${rv.n}</span><span>${rv.t}</span></div><div class="rs">${star(rv.s)}</div><p>${rv.p}</p></div>`).join('')}
       </div>
 
@@ -2712,6 +2713,93 @@ function openModal(id){
 
   // オーナーの改善報告を非同期で取得
   if(s.placeId) loadImproveReport(s.placeId);
+
+  // Firestore から全ユーザー投稿を取得してスコア・写真・口コミを更新
+  loadFirestoreScores(s.id);
+}
+
+// Firestore + LocalStorage をマージしてモーダルのスコア・写真・口コミを更新
+async function loadFirestoreScores(shopId){
+  const scoreEl   = document.getElementById('modal-score-grid');
+  const photoEl   = document.getElementById('modal-kirein-photos');
+  const reviewEl  = document.getElementById('modal-kirein-reviews');
+  if(!scoreEl || !window.db) return;
+
+  try {
+    // Firestore から取得
+    const snap = await window.db.collection('posts')
+      .where('shop_id', '==', String(shopId))
+      .get();
+    const remotePosts = snap.docs.map(d => ({ ...d.data(), _fsId: d.id }));
+
+    // LocalStorage とマージ（post_id で重複排除）
+    const localPosts = getPosts().filter(p => String(p.shop_id) === String(shopId));
+    const localIds   = new Set(localPosts.map(p => p.post_id).filter(Boolean));
+    const allPosts   = [
+      ...localPosts,
+      ...remotePosts.filter(p => !localIds.has(p.post_id))
+    ];
+
+    if(!allPosts.length) return;
+
+    // スコア再計算
+    const avg   = arr => arr.reduce((a,b)=>a+b,0) / arr.length;
+    const toilet = avg(allPosts.map(p => p.cleanliness_rating || 0));
+    const air    = avg(allPosts.map(p => p.air_rating || 0));
+    const total  = avg(allPosts.map(p => ((p.cleanliness_rating||0)+(p.air_rating||0))/2));
+    const repeatCount = allPosts.filter(p => p.toilet_repeat).length;
+
+    // スコアグリッド更新
+    scoreEl.innerHTML = `
+      <div class="b"><small>トイレ清潔</small><b>${toilet.toFixed(1)}</b></div>
+      <div class="b"><small>空気・無臭</small><b>${air.toFixed(1)}</b></div>
+      <div class="b"><small>総合</small><b>${total.toFixed(1)}</b></div>`;
+
+    // 写真セクション更新
+    if(photoEl){
+      const photos = allPosts.filter(p => p.photo_url).slice(-6);
+      photoEl.innerHTML = photos.length ? `
+        <div class="msec-t">📷 トイレの写真</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+          ${photos.map(p=>`<img src="${p.photo_url}" alt="トイレ写真"
+            style="width:calc(33% - 6px);aspect-ratio:1;object-fit:cover;border-radius:10px;cursor:pointer"
+            onclick="window.open('${p.photo_url}','_blank')">`).join('')}
+        </div>` : '';
+    }
+
+    // キレイン口コミ更新（コメントありのもの ＋ 静的レビューは消えないよう末尾追加）
+    if(reviewEl){
+      const kireinComments = allPosts
+        .filter(p => p.comment)
+        .sort((a,b) => new Date(b.created_at||0) - new Date(a.created_at||0))
+        .slice(0, 5);
+      if(kireinComments.length){
+        const kireinHtml = kireinComments.map(p=>`
+          <div class="rv">
+            <div class="rt">
+              <span>キレインユーザー</span>
+              <span>${p.created_at ? new Date(p.created_at).toLocaleDateString('ja-JP') : ''}</span>
+            </div>
+            <div class="rs">${star(Math.round((p.cleanliness_rating||0)))}</div>
+            <p>${p.comment}</p>
+          </div>`).join('');
+        // 既存（静的）レビューの前に挿入
+        reviewEl.insertAdjacentHTML('afterbegin', kireinHtml);
+      }
+
+      // トイレリピートバッジをヘッダーに反映
+      if(repeatCount > 0){
+        const metaEl = document.querySelector('#modal .mmeta');
+        if(metaEl && !metaEl.querySelector('.repeat-badge')){
+          metaEl.insertAdjacentHTML('beforeend',
+            `<span class="repeat-badge" style="background:#fff3e0;color:#e65100;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:4px">🔄 トイレリピート ${repeatCount}人</span>`);
+        }
+      }
+    }
+
+  } catch(e) {
+    console.error('Firestoreスコア更新エラー:', e);
+  }
 }
 
 async function loadImproveReport(placeId){
