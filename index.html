@@ -366,14 +366,15 @@ function fallbackNicknameLogin(){
 
   @media(max-width:860px){
     /* ヘッダーをモバイル対応 */
-    .head-in{padding:12px 0;gap:8px}
-    .logo{gap:6px}
-    .logo .mark{font-size:20px}
-    .logo .jp{font-size:12px}
-    .logo .sub{font-size:8.5px;display:none}
-    .head-cta{gap:6px}
-    .btn.sm{padding:7px 10px;font-size:10px}
-    .head-cta .owner{font-size:10px;padding:7px 10px}
+    .head-in{padding:12px 0;gap:6px;flex-wrap:wrap}
+    .logo{gap:4px;flex:1}
+    .logo .mark{font-size:18px}
+    .logo .jp{font-size:11px}
+    .logo .sub{font-size:8px;display:none}
+    .head-cta{gap:4px;order:3;width:100%;margin-top:4px}
+    .btn.sm{padding:6px 10px;font-size:10px;flex:1;justify-content:center}
+    .head-cta .owner{display:none}
+    #loginBtn{display:none}
 
     .layout{grid-template-columns:1fr}
     .mapwrap{position:relative;top:0;height:340px;min-height:0;order:-1}
