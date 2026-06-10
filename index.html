@@ -994,7 +994,7 @@ function selectGooglePlace(placeId, placeName){
         id: Math.max(...STORES.map(s => s.id), 0) + 1,
         name: place.name,
         area: extractArea(place.formatted_address) || '名古屋',
-        cat: '飲食店',
+        cat: extractCatFromTypes(place.types || []),
         rank: 'bronze',
         icon: '🍽️',
         sc: { toilet: 3.5, air: 3.5, total: 3.5 },
@@ -2123,12 +2123,21 @@ function initializeGooglePlaces(){
   }
 }
 
+function extractCatFromTypes(types){
+  if(!types||!types.length) return '飲食店';
+  if(types.includes('bar'))    return 'バー・居酒屋';
+  if(types.includes('cafe'))   return 'カフェ';
+  if(types.includes('bakery')) return 'ベーカリー';
+  if(types.includes('meal_takeaway') && !types.includes('restaurant')) return 'テイクアウト';
+  return 'レストラン';
+}
+
 function placeToStore(place, idx){
   return {
     id: Date.now() + idx,
     name: place.name,
     area: extractArea(place.vicinity || place.formatted_address || '') || '名古屋',
-    cat: '飲食店',
+    cat: extractCatFromTypes(place.types || []),
     rank: 'bronze',
     icon: '🍽️',
     sc: { toilet: 0, air: 0, total: 0 }, // 実際の投稿から算出
