@@ -719,12 +719,10 @@ function showLoginModal(){
   if(user){
     showPostModal();
   } else {
-    const nickname = prompt('ニックネームを入力してください（20字以内）:');
-    if(nickname && nickname.trim()){
-      getOrCreateUser(nickname.trim());
-      updateUIForLogin();
-      showPostModal();
-    }
+    // prompt() ではなく nicknameModal を使う
+    const modal = document.getElementById('nicknameModal');
+    modal.style.display = 'flex';
+    setTimeout(() => document.getElementById('nicknameInput')?.focus(), 100);
   }
 }
 
@@ -751,6 +749,8 @@ function submitNickname(){
   updateUIForLogin();
   document.getElementById('nicknameModal').style.display = 'none';
   document.getElementById('nicknameInput').value = '';
+  // ニックネーム設定後、投稿フォームへ進む
+  showPostModal();
 }
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
