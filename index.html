@@ -464,6 +464,11 @@ function fallbackNicknameLogin(){
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
           <select id="cat">
             <option value="">業態すべて</option>
+            <option value="レストラン">レストラン</option>
+            <option value="バー・居酒屋">バー・居酒屋</option>
+            <option value="カフェ">カフェ</option>
+            <option value="テイクアウト">テイクアウト</option>
+            <option value="ベーカリー">ベーカリー</option>
           </select>
         </div>
       </div>
@@ -2385,7 +2390,6 @@ const activeAttrs = new Set();
 
 // populate selects + chips
 const areaSel=document.getElementById('area'),catSel=document.getElementById('cat');
-[...new Set(STORES.map(s=>s.cat))].forEach(c=>catSel.add(new Option(c,c)));
 const chipBox=document.getElementById('chips');
 
 // キレイン認定店チップ（先頭に追加）
