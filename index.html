@@ -1991,7 +1991,12 @@ function registerManualShop(){
 function renderNearbyList(stores, container){
   const el = container || document.getElementById('storeListContainer');
   if(!stores.length){
-    el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">近くのお店が見つかりませんでした</div>`;
+    el.innerHTML = `
+      <div style="text-align:center;padding:24px 16px">
+        <div style="font-size:28px;margin-bottom:8px">🔍</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:16px">近くのお店が見つかりませんでした</div>
+        ${_notFoundGuide()}
+      </div>`;
     return;
   }
 
@@ -2000,6 +2005,7 @@ function renderNearbyList(stores, container){
 
   el.innerHTML = `<div style="font-size:11px;color:var(--muted);margin-bottom:8px;text-align:center">📍 現在地から近い順 (${stores.length}件)</div>` +
     stores.map(s => {
+
       const dm = Math.round((s.dist||0) * 1000);
       const distLabel = dm < 1000 ? `${dm}m` : `${(dm/1000).toFixed(1)}km`;
       const distColor = dm < 100 ? '#25b598' : dm < 300 ? '#f0a500' : '#5d6b66';
@@ -2016,7 +2022,22 @@ function renderNearbyList(stores, container){
         </div>
         <div style="font-size:14px;font-weight:700;color:${distColor};flex-shrink:0;margin-left:12px">${distLabel}</div>
       </div>`;
-    }).join('');
+    }).join('') + _notFoundGuide();
+}
+
+function _notFoundGuide(){
+  return `
+    <div style="margin-top:16px;padding:14px;background:#f6f9f8;border-radius:10px;text-align:center">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">お探しのお店が見つからない場合</div>
+      <button onclick="document.getElementById('googlePlacesInput')?.focus();document.getElementById('googlePlacesInput')?.scrollIntoView({behavior:'smooth'})"
+        style="width:100%;padding:10px;background:var(--pine);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px">
+        🔍 店名で検索する
+      </button>
+      <button onclick="showManualInput()"
+        style="width:100%;padding:10px;background:#fff;color:var(--pine);border:1px solid var(--line);border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">
+        ✏️ 手動でお店を登録する
+      </button>
+    </div>`;
 }
 
 async function useGPSForPost(){
