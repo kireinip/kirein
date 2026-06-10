@@ -50,7 +50,7 @@
         if(!user || user.uid !== firebaseUser.uid){
           user = {
             uid:          firebaseUser.uid,
-            nickname:     firebaseUser.displayName || firebaseUser.email.split('@')[0],
+            nickname:     firebaseUser.displayName || (firebaseUser.email || '').split('@')[0] || 'ユーザー',
             email:        firebaseUser.email,
             photo:        firebaseUser.photoURL,
             total_points: user?.total_points || 0,
@@ -2226,7 +2226,10 @@ async function loadRestaurantsFromAPI(){
       const doc = await window.db.collection('cache').doc('restaurants').get();
       if(doc.exists){
         const d = doc.data();
-        const age = Date.now() - new Date(d.updated_at).getTime();
+        // updated_at は Firestore Timestamp オブジェクト（.toDate()で変換）or 文字列の両方に対応
+        const updatedMs = d.updated_at?.toDate ? d.updated_at.toDate().getTime()
+                        : new Date(d.updated_at).getTime();
+        const age = Date.now() - updatedMs;
         if(age < WEEK_MS && d.data){
           const stores = JSON.parse(d.data);
           if(stores?.length > 0){
