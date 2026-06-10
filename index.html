@@ -707,6 +707,7 @@ function addPost(shopId, cleanliness, air, comment, fixedPoints, extra){
     child_rating: extra?.child || null,
     comment: comment,
     has_photo: extra?.hasPhoto || false,
+    toilet_repeat: extra?.toilet_repeat || false,
     // 非公開データ（店舗・運営のみ）
     negative_items: extra?.negItems || [],
     negative_comment: extra?.negComment || '',
@@ -1253,6 +1254,23 @@ function proceedToPostForm(shopId){
           </div>
         </div>
 
+        <!-- トイレリピート -->
+        <div style="margin-bottom:14px">
+          <div style="font-size:13px;font-weight:700;color:var(--pine);margin-bottom:8px">🔄 このトイレ、また使いに来たいですか？</div>
+          <div style="display:flex;gap:8px">
+            <button type="button" id="repeatYes"
+              onclick="selectRepeat(true)"
+              style="flex:1;padding:10px 6px;border:2px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;font-size:13px;font-weight:700;transition:.15s">
+              🔄 トイレだけでリピートしたい！
+            </button>
+            <button type="button" id="repeatNo"
+              onclick="selectRepeat(false)"
+              style="flex:1;padding:10px 6px;border:2px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;font-size:13px;color:var(--muted);transition:.15s">
+              ふつう
+            </button>
+          </div>
+        </div>
+
         <textarea id="postComment" rows="2" placeholder="ひとことコメント（任意）" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;font-family:inherit;font-size:13px;resize:none;margin-bottom:12px"></textarea>
 
         <div id="pointNote" class="note" style="margin-bottom:8px"></div>
@@ -1261,6 +1279,22 @@ function proceedToPostForm(shopId){
     </div>`;
 
   document.getElementById('overlay').classList.add('open');
+}
+
+// トイレリピート選択
+let toiletRepeatSelected = false;
+function selectRepeat(val){
+  toiletRepeatSelected = val;
+  const yes = document.getElementById('repeatYes');
+  const no  = document.getElementById('repeatNo');
+  if(!yes || !no) return;
+  if(val){
+    yes.style.cssText = 'flex:1;padding:10px 6px;border:2px solid #e65100;border-radius:10px;background:#fff3e0;cursor:pointer;font-size:13px;font-weight:700;color:#e65100;transition:.15s';
+    no.style.cssText  = 'flex:1;padding:10px 6px;border:2px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;font-size:13px;color:var(--muted);transition:.15s';
+  } else {
+    no.style.cssText  = 'flex:1;padding:10px 6px;border:2px solid var(--line);border-radius:10px;background:var(--bg-soft);cursor:pointer;font-size:13px;font-weight:700;color:var(--ink);transition:.15s';
+    yes.style.cssText = 'flex:1;padding:10px 6px;border:2px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;font-size:13px;font-weight:700;transition:.15s';
+  }
 }
 
 // 心の声ボタン選択
@@ -1374,8 +1408,10 @@ function submitPost(e, shopId){
     const points = addPost(shopId, cleanliness, air, comment, tierPts, {
       tier, amenity, sink, child, negItems, negComment, hasPhoto: !!hasPhoto,
       placeId: shop?.placeId || null, shopName: shop?.name || null,
-      userUid: user?.uid || null
+      userUid: user?.uid || null,
+      toilet_repeat: toiletRepeatSelected
     });
+    toiletRepeatSelected = false; // リセット
     const updatedUser = updateUserPoints(points);
     if(shop) shop.kirei += 1;
 
@@ -2228,7 +2264,7 @@ const _REMOVED = [
   {id:29,name:"豆腐料理 やまと",area:"栄",cat:"レストラン",rank:"silver",icon:"🥢",sc:{toilet:4.4,air:4.5,total:4.4},kirei:145,tags:["禁煙","子ども安心","ヘルシー"],x:56,y:46,reviews:[{n:"丸田",s:4,t:"先月",p:"ヘルシーで美味しい豆腐料理。女性に好評。"}]},
   {id:30,name:"名古屋コーチン 鶏三郎",area:"栄",cat:"焼鳥",rank:"platinum",icon:"🐔",sc:{toilet:4.9,air:4.8,total:4.9},kirei:270,tags:["高級感","無臭","名古屋グルメ"],x:55,y:32,reviews:[{n:"平野",s:5,t:"先週",p:"名古屋コーチン専門店。品質と清潔さは一級品。"}]},
 ]; // _REMOVED 終了
-const ATTRS=["無臭","女性に人気","子ども安心","高級感","デート向き","禁煙"];
+const ATTRS=["🔄 トイレリピート","無臭","女性に人気","子ども安心","高級感","デート向き","禁煙"];
 const RANKORDER={black:4,platinum:3,gold:2,silver:1,bronze:0};
 const RANKLBL={black:"💎 最優秀認定",platinum:"🥇 優良認定",gold:"🥈 認定店",silver:"🥉 認定店",bronze:"未評価"};
 const RANKCHAR={black:"💎",platinum:"🏆",gold:"★",silver:"✓",bronze:"?"};
@@ -2357,11 +2393,14 @@ function filtered(){
     const rank = calcStoreRank(s.id);
     if(onlyCertified && rank==='bronze') return false; // 認定店フィルター
     if(onlyToiletReview && !s.placeId) return false; // placeIdなしは除外
-    if(onlyToiletReview && TOILET_REVIEW_CACHE[s.placeId] === false) return false; // 口コミなし確定を除外
-    if(onlyToiletReview && TOILET_REVIEW_CACHE[s.placeId] !== true && !toiletReviewLoading) return false; // 未取得も非表示（取得完了後）
+    if(onlyToiletReview && TOILET_REVIEW_CACHE[s.placeId] === false) return false;
+    if(onlyToiletReview && TOILET_REVIEW_CACHE[s.placeId] !== true && !toiletReviewLoading) return false;
     return (!q||s.name.includes(q)||s.area.includes(q)||s.cat.includes(q)||(s.address||'').includes(q))&&
            (!ar||s.area===ar)&&(!ct||s.cat===ct)&&
-           [...activeAttrs].every(a=>s.tags.includes(a));
+           [...activeAttrs].every(a=>{
+             if(a==='🔄 トイレリピート') return (calcScore(s.id)?.repeatCount||0) > 0;
+             return s.tags.includes(a);
+           });
   });
   // GPS モード：距離順
   if(gpsSearchActive && gpsSearchLocation){
@@ -2470,10 +2509,11 @@ function calcScore(shopId){
   if(!posts.length) return null;
   const avg = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
   return {
-    toilet: avg(posts.map(p=>p.cleanliness_rating||0)),
-    air:    avg(posts.map(p=>p.air_rating||0)),
-    total:  avg(posts.map(p=>((p.cleanliness_rating||0)+(p.air_rating||0))/2)),
-    count:  posts.length
+    toilet:      avg(posts.map(p=>p.cleanliness_rating||0)),
+    air:         avg(posts.map(p=>p.air_rating||0)),
+    total:       avg(posts.map(p=>((p.cleanliness_rating||0)+(p.air_rating||0))/2)),
+    count:       posts.length,
+    repeatCount: posts.filter(p=>p.toilet_repeat).length
   };
 }
 
@@ -2501,7 +2541,7 @@ function render(){
         <div class="sc">空気・無臭<b>${score.air.toFixed(1)}<span class="star">★</span></b></div>
         <div class="sc">総合<b>${score.total.toFixed(1)}<span class="star">★</span></b></div>
       </div>
-      <div class="kirei">👍 <b>${score.count}</b> 件の投稿</div>
+      <div class="kirei">👍 <b>${score.count}</b> 件の投稿${score.repeatCount > 0 ? `　<span style="background:#fff3e0;color:#e65100;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:4px">🔄 リピート ${score.repeatCount}人</span>` : ''}</div>
     ` : `
       <div style="margin-top:10px;font-size:12px;color:var(--muted);padding:8px;background:var(--bg-soft);border-radius:8px">
         📝 まだ評価がありません。最初の投稿者になりませんか？
@@ -2591,7 +2631,7 @@ function openModal(id){
       <button class="close" onclick="closeModal()">×</button>
       <span class="mcert cert ${s.rank}">✦ キレイン認証 ${RANKLBL[s.rank]}｜${RANKDESC[s.rank]}</span>
       <h3>${s.name}</h3>
-      <div class="mmeta">${s.area}・${s.cat}　|　👍 ${s.kirei} 人が「きれい！」</div>
+      <div class="mmeta">${s.area}・${s.cat}　|　👍 ${s.kirei} 人が「きれい！」${(()=>{const sc=calcScore(s.id);return sc?.repeatCount>0?`　<span style="background:#fff3e0;color:#e65100;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px">🔄 トイレリピート ${sc.repeatCount}人</span>`:'';})()}</div>
     </div>
     <div class="mbody">
       <div class="scoregrid">
