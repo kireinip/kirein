@@ -480,6 +480,9 @@ function fallbackNicknameLogin(){
     </div>
   </div>
 
+  <!-- エリアミッションバナー -->
+  <div id="areaMissionBanner" style="display:none;padding:0 12px;margin-top:8px"></div>
+
   <div class="layout">
     <div class="list" id="list"></div>
     <div class="mapwrap">
@@ -2666,9 +2669,11 @@ function render(){
             <div class="name">${s.name}</div>
             <div class="meta">${s.area}・${s.cat}${s._dist != null ? ` <span style="color:var(--mint);font-weight:700">📍 ${s._dist < 1 ? (s._dist*1000).toFixed(0)+'m' : s._dist.toFixed(1)+'km'}</span>` : ''}</div>
           </div>
-          ${certLbl
-            ? `<span style="font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:7px;background:${certColor}22;color:${certColor};white-space:nowrap">✦ ${certLbl}</span>`
-            : '<span style="font-size:11px;color:var(--muted);padding:4px 8px;background:var(--bg-soft);border-radius:6px">未評価</span>'}
+          ${checkVirginStore(s.id)
+            ? `<span style="font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:7px;background:#fff8dc;color:#9a6500;white-space:nowrap;animation:pulse-gold 1.5s ease-in-out infinite">✨ 未制覇</span>`
+            : certLbl
+              ? `<span style="font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:7px;background:${certColor}22;color:${certColor};white-space:nowrap">✦ ${certLbl}</span>`
+              : '<span style="font-size:11px;color:var(--muted);padding:4px 8px;background:var(--bg-soft);border-radius:6px">未評価</span>'}
         </div>
         ${scoreHtml}
         ${quoteHtml}
@@ -2680,6 +2685,79 @@ function render(){
   }).join('');
 
   renderPins(r);
+  renderAreaMission(r);
+}
+
+// ===== エリアミッション =====
+function renderAreaMission(stores){
+  const el = document.getElementById('areaMissionBanner');
+  if(!el) return;
+  const total = stores.length;
+  if(total === 0){ el.style.display = 'none'; return; }
+
+  const posts     = getPosts();
+  const postedIds = new Set(posts.map(p => String(p.shop_id)));
+  const cleared   = stores.filter(s => postedIds.has(String(s.id))).length;
+  const pct       = Math.round(cleared / total * 100);
+  const TARGET    = 70;
+  const remaining = Math.max(0, Math.ceil(total * TARGET / 100) - cleared);
+  const isCleared = pct >= TARGET;
+
+  // 参加人数（このエリアに投稿したユニークユーザー数）
+  const areaIds = new Set(stores.map(s => String(s.id)));
+  const participants = new Set(
+    posts.filter(p => areaIds.has(String(p.shop_id)) && p.user_uid).map(p => p.user_uid)
+  ).size;
+
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div style="background:${isCleared
+      ? 'linear-gradient(120deg,#e8f5e9,#c8e6c9)'
+      : 'linear-gradient(120deg,#f0faf7,#e0f5ee)'};
+      border-radius:14px;padding:14px 18px;margin-bottom:12px;
+      border:1.5px solid ${isCleared ? '#4caf50' : 'var(--mint)'}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div>
+          <span style="font-size:13px;font-weight:700;color:var(--pine)">
+            ${isCleared ? '🎉 エリアミッション達成！' : '🎯 エリアミッション進行中'}
+          </span>
+          ${participants > 0 ? `<span style="font-size:11px;color:var(--muted);margin-left:8px">👥 ${participants}人が参加</span>` : ''}
+        </div>
+        <span style="font-size:15px;font-weight:700;color:${isCleared ? '#2e7d32' : 'var(--mint)'}">${pct}%</span>
+      </div>
+
+      <!-- プログレスバー -->
+      <div style="background:rgba(0,0,0,.08);border-radius:999px;height:10px;overflow:hidden;margin-bottom:8px">
+        <div style="height:100%;width:${pct}%;background:${isCleared ? '#4caf50' : 'var(--mint)'};
+          border-radius:999px;transition:width .6s ease;position:relative">
+          ${pct > 10 ? `<div style="position:absolute;right:6px;top:50%;transform:translateY(-50%);
+            width:6px;height:6px;background:rgba(255,255,255,.7);border-radius:50%"></div>` : ''}
+        </div>
+      </div>
+
+      <div style="font-size:12px;color:var(--muted)">
+        ${isCleared
+          ? `✅ <b>${cleared}/${total}店舗</b>を制覇！このエリアのトイレ環境が改善されました`
+          : `<b>${cleared}</b> / ${total}店舗 制覇済み　${remaining > 0
+              ? `あと <b style="color:var(--pine)">${remaining}店舗</b> でエリアクリア 🏆`
+              : ''}`
+        }
+      </div>
+
+      ${!isCleared && remaining > 0 && remaining <= 5 ? `
+        <div style="margin-top:8px;font-size:11px;background:rgba(255,200,0,.25);
+          color:#7a4f00;border-radius:8px;padding:6px 10px;font-weight:700;
+          animation:pulse-gold 1.5s ease-in-out infinite">
+          🔥 あと${remaining}店舗！友達を誘って達成しよう →
+          <a href="https://lin.ee/ObAs4yD" style="color:#7a4f00;text-decoration:underline">LINE でシェア</a>
+        </div>` : ''}
+
+      ${!isCleared ? `
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">
+          💡 金色ピン（✨）= 未制覇の店舗。あなたが初投稿でボーナスPT GET！
+        </div>` : ''}
+    </div>
+  `;
 }
 
 // ヴァージンストア判定（全ユーザーの投稿が0件）
