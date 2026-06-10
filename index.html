@@ -2366,7 +2366,7 @@ function render(){
       : '';
 
     return `
-    <div class=”card” data-id=”${s.id}” style=”cursor:pointer” onclick=”openModal(this.getAttribute('data-id'))”
+    <div class=”card” data-id=”${s.id}” style=”cursor:pointer”
          onmouseenter=”hl(this.getAttribute('data-id'),true)” onmouseleave=”hl(this.getAttribute('data-id'),false)”>
       <div class=”thumb”>
         <span class=”rankbadge” style=”background:${certColor||'#ccc'}”>
@@ -2392,6 +2392,14 @@ function render(){
       </div>
     </div>`;
   }).join('');
+
+  // Store card click handler
+  document.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('click', function(e) {
+      const id = this.getAttribute('data-id');
+      openModal(id);
+    });
+  });
 
   renderPins(r);
 }
