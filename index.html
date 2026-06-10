@@ -1736,6 +1736,20 @@ function searchWithExpandingRadius(loc, radii, listContainer){
     </div>`;
 
   // rankBy: DISTANCE → 距離が近い順に返ってくる（radius不要・精度が高い）
+  // restaurant + bar（居酒屋）+ cafe（ランチカフェ）を取得してマージ
+  placesService.nearbySearch({
+    location: { lat: loc.lat, lng: loc.lng },
+    rankBy: google.maps.places.RankBy.DISTANCE,
+    type: 'bar',
+    language: 'ja'
+  }, (barResults, barStatus) => {
+    const extraStores = (barStatus === google.maps.places.PlacesServiceStatus.OK && barResults) ? barResults : [];
+    extraStores.forEach(place => {
+      if(!STORES.find(s => s.placeId === place.place_id)){
+        STORES.push(placeToStore(place, STORES.length));
+      }
+    });
+  });
   placesService.nearbySearch({
     location: { lat: loc.lat, lng: loc.lng },
     rankBy: google.maps.places.RankBy.DISTANCE,
@@ -2038,7 +2052,7 @@ function nearbySearchWithPagination(request, allResults, resolve){
 }
 
 function loadRestaurantsFromAPI(){
-  const cacheKey = 'kirein_restaurants_v3';
+  const cacheKey = 'kirein_restaurants_v4';
   const cached = localStorage.getItem(cacheKey);
   if(cached){
     try{
@@ -2058,42 +2072,53 @@ function loadRestaurantsFromAPI(){
     return;
   }
 
-  console.log(`📍 名古屋${NAGOYA_SEARCH_POINTS.length}エリアの飲食店を取得中...`);
+  // restaurant（レストラン） + bar（居酒屋） + cafe（カフェランチ）を取得
+  const SEARCH_TYPES = ['restaurant', 'bar', 'cafe'];
+  console.log(`📍 名古屋${NAGOYA_SEARCH_POINTS.length}エリア × ${SEARCH_TYPES.length}種類の飲食店を取得中...`);
   STORES = [];
 
-  // 順番に検索（並列すぎると API 制限にかかる）
-  let idx = 0;
-  function searchNext(){
-    if(idx >= NAGOYA_SEARCH_POINTS.length){
-      // 全エリア完了
-      const cacheKey2 = 'kirein_restaurants_v3';
+  let typeIdx = 0;
+
+  function searchNextType(){
+    if(typeIdx >= SEARCH_TYPES.length){
+      // 全種類・全エリア完了 → キャッシュ保存
       try {
-        localStorage.setItem(cacheKey2, JSON.stringify({ stores: STORES, timestamp: Date.now() }));
+        localStorage.setItem(cacheKey, JSON.stringify({ stores: STORES, timestamp: Date.now() }));
       } catch(e) {
-        // localStorage 容量超えたら古いキャッシュを削除して再試行
+        localStorage.removeItem('kirein_restaurants_v3');
         localStorage.removeItem('kirein_restaurants_v2');
         localStorage.removeItem('kirein_restaurants_cache');
-        try { localStorage.setItem(cacheKey2, JSON.stringify({ stores: STORES, timestamp: Date.now() })); } catch(e2){}
+        try { localStorage.setItem(cacheKey, JSON.stringify({ stores: STORES, timestamp: Date.now() })); } catch(e2){}
       }
       console.log(`🎉 名古屋全域 ${STORES.length}店舗の取得完了！`);
       render();
       return;
     }
-    const point = NAGOYA_SEARCH_POINTS[idx++];
-    new Promise(resolve => {
-      nearbySearchWithPagination({
-        location: { lat: point.lat, lng: point.lng },
-        radius: 1200,
-        type: 'restaurant',
-        language: 'ja'
-      }, [], resolve);
-    }).then(count => {
-      console.log(`✅ ${point.name}: 累計${STORES.length}件`);
-      render(); // 取得するたびにリアルタイム更新
-      setTimeout(searchNext, 500); // 0.5秒後に次のエリアへ
-    });
+    const currentType = SEARCH_TYPES[typeIdx++];
+    console.log(`🔍 ${currentType} を検索中...`);
+    let idx = 0;
+    function searchNextPoint(){
+      if(idx >= NAGOYA_SEARCH_POINTS.length){
+        console.log(`✅ ${currentType} 完了: 累計${STORES.length}件`);
+        setTimeout(searchNextType, 500); // 次のタイプへ
+        return;
+      }
+      const point = NAGOYA_SEARCH_POINTS[idx++];
+      new Promise(resolve => {
+        nearbySearchWithPagination({
+          location: { lat: point.lat, lng: point.lng },
+          radius: 1200,
+          type: currentType,
+          language: 'ja'
+        }, [], resolve);
+      }).then(() => {
+        render(); // 取得するたびにリアルタイム更新
+        setTimeout(searchNextPoint, 500);
+      });
+    }
+    searchNextPoint();
   }
-  searchNext();
+  searchNextType();
 }
 
 // 旧キャッシュを削除
