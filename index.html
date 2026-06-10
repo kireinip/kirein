@@ -630,8 +630,9 @@ function getOrCreateUser(nickname){
 function updateUserPoints(points){
   let user = getUserData();
   if(!user) return;
-  user.total_points += points;
-  user.post_count += 1;
+  user.total_points  = (user.total_points  || 0) + points;
+  user.post_count    = (user.post_count    || 0) + 1;
+  if(user.current_lv === undefined || user.current_lv === null) user.current_lv = 0;
   checkLvUp(user);
   localStorage.setItem('kirein_user', JSON.stringify(user));
   return user;
