@@ -2590,8 +2590,18 @@ function calcScore(shopId){
 
 function render(){
   if(!document.getElementById('cnt')) return; // 探すページ以外では不要
-  const r = filtered();
-  document.getElementById('cnt').textContent = r.length;
+  const allResults = filtered();
+  const LIMIT = 30;
+  const r = allResults.slice(0, LIMIT);
+
+  const countEl = document.querySelector('.results-top .count');
+  if(countEl){
+    const extra = allResults.length > LIMIT
+      ? `<span style="font-size:11px;color:var(--muted);margin-left:6px">（近い順${LIMIT}件表示）</span>`
+      : '';
+    countEl.innerHTML = `<b id="cnt">${allResults.length}</b> 件の"きれいな店"${extra}`;
+  }
+
   const list = document.getElementById('list');
   if(!r.length){
     list.innerHTML = `<div class="empty">条件に合うお店が見つかりませんでした。<br>絞り込みを減らしてみてください。</div>`;
