@@ -2393,23 +2393,6 @@ function render(){
     </div>`;
   }).join('');
 
-  // Store card click handler
-  document.querySelectorAll('.card').forEach(card => {
-    card.addEventListener('click', function(e) {
-      const id = this.getAttribute('data-id');
-      openModal(id);
-    });
-  });
-
-  // Post button click handler
-  document.querySelectorAll('.post-btn').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      console.log('投稿ボタンクリック');
-      showPostModal();
-    });
-  });
-
   renderPins(r);
 }
 
@@ -2481,6 +2464,25 @@ window.gmap = new google.maps.Map(document.getElementById('map'), {
 });
 
 window.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+// ── カード一覧クリック（イベントデリゲーション）──────────────────────
+// render() のたびに付け直す必要がないよう、#list に1回だけ登録する
+document.getElementById('list').addEventListener('click', function(e) {
+  // 「このお店を評価する」ボタン
+  const btn = e.target.closest('.post-btn');
+  if (btn) {
+    e.stopPropagation();
+    showPostModal();
+    return;
+  }
+  // カード本体
+  const card = e.target.closest('.card[data-id]');
+  if (card) {
+    const id = card.getAttribute('data-id');
+    openModal(id);
+  }
+});
+
 render();
 </script>
 </body>
