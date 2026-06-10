@@ -231,6 +231,20 @@ header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.96);backdro
       </div>
     </div>
 
+    <!-- 改善報告パネル -->
+    <div class="panel hidden" id="improvePanel">
+      <h2>✅ 改善報告</h2>
+      <div class="panel-sub">お客様の指摘を改善したことをキレインユーザーにお知らせできます。モーダルに「改善済み」として表示されます。</div>
+      <div id="improveHistory" style="margin-bottom:16px"></div>
+      <div id="improveFormWrap">
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <textarea id="improveNote" rows="2" placeholder="例：トイレを全面リニューアルしました。清掃を1日3回に増やしました。" style="flex:1;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;font-family:inherit;font-size:13px;resize:vertical;outline:none"></textarea>
+          <button class="btn btn-mint btn-sm" id="improveSaveBtn" onclick="saveImprovement()" style="white-space:nowrap;margin-top:2px">報告する</button>
+        </div>
+        <span id="improveSaved" style="font-size:12px;color:var(--mint);display:none;margin-top:6px;display:none">✓ 報告しました！ユーザーアプリに表示されます</span>
+      </div>
+    </div>
+
     <div class="panel hidden" id="notifyPanel">
       <h2>メール通知の設定</h2>
       <div class="panel-sub">通知先・ON/OFFを変更するとすぐに反映されます</div>
@@ -409,6 +423,7 @@ async function loadDashboard(store){
   document.getElementById('dashLoading').classList.remove('hidden');
   document.getElementById('dashContent').classList.add('hidden');
   document.getElementById('dashEmpty').classList.add('hidden');
+  document.getElementById('improvePanel').classList.add('hidden');
   document.getElementById('notifyPanel').classList.add('hidden');
 
   let posts = [];
@@ -423,6 +438,9 @@ async function loadDashboard(store){
   posts.sort((a,b)=>(toDate(b.created_at)?.getTime()||0) - (toDate(a.created_at)?.getTime()||0));
 
   document.getElementById('dashLoading').classList.add('hidden');
+
+  document.getElementById('improvePanel').classList.remove('hidden');
+  loadImprovements();
 
   document.getElementById('notifyPanel').classList.remove('hidden');
   loadNotifySettings(store);
@@ -463,6 +481,59 @@ async function saveNotifySettings(){
     setTimeout(()=>{ saved.style.display='none'; }, 3000);
   }catch(e){
     console.error('通知設定の保存に失敗', e);
+    alert('保存に失敗しました。時間をおいて再度お試しください。');
+  }
+  btn.disabled = false;
+}
+
+// ========== 改善報告 ==========
+async function loadImprovements(){
+  const user = CURRENT_USER || window.auth?.currentUser;
+  if(!user) return;
+  const el = document.getElementById('improveHistory');
+  if(!el) return;
+  try{
+    const doc = await window.db.collection('stores').doc(user.uid).get();
+    const improvements = doc.data()?.improvements || [];
+    if(improvements.length === 0){
+      el.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:8px 0">まだ改善報告はありません</div>';
+      return;
+    }
+    el.innerHTML = improvements.slice().reverse().map(imp => `
+      <div style="background:var(--mint-soft);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px">
+        <span style="font-size:16px;margin-top:2px">✅</span>
+        <div style="flex:1">
+          <div style="font-size:13px;color:var(--pine);font-weight:600">${imp.note}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">${new Date(imp.date).toLocaleDateString('ja-JP')} に報告</div>
+        </div>
+      </div>`).join('');
+  }catch(e){
+    console.error('改善報告の取得に失敗', e);
+  }
+}
+
+async function saveImprovement(){
+  const user = CURRENT_USER || window.auth?.currentUser;
+  if(!user) return;
+  const note = document.getElementById('improveNote').value.trim();
+  if(!note){ alert('内容を入力してください'); return; }
+  const btn = document.getElementById('improveSaveBtn');
+  const saved = document.getElementById('improveSaved');
+  btn.disabled = true;
+  try{
+    await window.db.collection('stores').doc(user.uid).update({
+      improvements: firebase.firestore.FieldValue.arrayUnion({
+        note,
+        date: new Date().toISOString()
+      }),
+      last_improved_at: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    document.getElementById('improveNote').value = '';
+    saved.style.display = 'inline';
+    setTimeout(()=>{ saved.style.display = 'none'; }, 4000);
+    loadImprovements(); // 一覧を再描画
+  }catch(e){
+    console.error('改善報告の保存に失敗', e);
     alert('保存に失敗しました。時間をおいて再度お試しください。');
   }
   btn.disabled = false;
