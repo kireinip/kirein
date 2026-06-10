@@ -251,9 +251,14 @@ header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.96);backdro
       <div class="notify-row">
         <div class="notify-label">
           <div class="notify-title">通知先メールアドレス</div>
-          <div class="notify-desc">ログインに使うGoogleメール以外に送りたい場合に入力（未入力ならGoogleアカウントのメールに送信）</div>
+          <div class="notify-desc">複数登録可（1行に1アドレス）。複数登録時は同時送信。未入力ならGoogleアカウントのメールに送信。</div>
         </div>
-        <input id="notifyEmail" class="input" type="email" placeholder="例：owner@example.com" style="max-width:280px" />
+        <div style="max-width:300px;width:100%">
+          <textarea id="notifyEmails" class="input" rows="3"
+            placeholder="owner@example.com&#10;manager@example.com"
+            style="width:100%;resize:vertical;font-size:13px;font-family:inherit;line-height:1.6"></textarea>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">1行に1アドレス・最大5件まで</div>
+        </div>
       </div>
       <div class="notify-row">
         <div class="notify-label">
@@ -458,9 +463,13 @@ async function loadDashboard(store){
 }
 
 function loadNotifySettings(store){
-  document.getElementById('notifyEmail').value     = store.notify_email     || '';
+  // 複数アドレス（新形式）or 単一アドレス（後方互換）を読み込む
+  const emails = Array.isArray(store.notify_emails) && store.notify_emails.length
+    ? store.notify_emails
+    : (store.notify_email ? [store.notify_email] : []);
+  document.getElementById('notifyEmails').value      = emails.join('\n');
   document.getElementById('notifyEmergency').checked = store.notify_emergency !== false; // デフォルトON
-  document.getElementById('notifyDaily').checked    = store.notify_daily     !== false; // デフォルトON
+  document.getElementById('notifyDaily').checked     = store.notify_daily     !== false; // デフォルトON
 }
 
 async function saveNotifySettings(){
@@ -471,11 +480,17 @@ async function saveNotifySettings(){
   const saved = document.getElementById('notifySaved');
   btn.disabled = true;
   try{
+    // 複数アドレスを配列に変換（空行・@なしは除外・最大5件）
+    const emailList = document.getElementById('notifyEmails').value
+      .split('\n')
+      .map(s => s.trim())
+      .filter(s => s && s.includes('@'))
+      .slice(0, 5);
     await window.db.collection('stores').doc(user.uid).set({
-      notify_email:      document.getElementById('notifyEmail').value.trim() || null,
-      notify_emergency:  document.getElementById('notifyEmergency').checked,
-      notify_daily:      document.getElementById('notifyDaily').checked,
-      updated_at:        firebase.firestore.FieldValue.serverTimestamp()
+      notify_emails:    emailList,
+      notify_emergency: document.getElementById('notifyEmergency').checked,
+      notify_daily:     document.getElementById('notifyDaily').checked,
+      updated_at:       firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
     saved.style.display = 'inline';
     setTimeout(()=>{ saved.style.display='none'; }, 3000);
