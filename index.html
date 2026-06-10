@@ -1853,7 +1853,7 @@ function searchWithExpandingRadius(loc, radii, listContainer){
     </div>`;
 
   // restaurant / bar / cafe を並列で検索してマージ
-  const types = ['restaurant', 'bar', 'cafe'];
+  const types = ['restaurant', 'bar', 'cafe', 'meal_takeaway', 'bakery'];
   let done = 0;
   const allPlaces = new Map(); // place_id → place
 
