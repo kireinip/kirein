@@ -10,6 +10,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@600;700&family=Cormorant+Garamond:wght@600&display=swap" rel="stylesheet" />
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDRfloVijkhdUhF9v_DG7O3JV17Fqd9V7w&libraries=places"></script>
 
+<!-- LIFF SDK -->
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
 <!-- Firebase SDK (compat版) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -748,7 +751,13 @@ function updateUIForLogin(){
     if(loginBtn) loginBtn.style.display = 'none';
     if(userLink) {
       userLink.style.display = 'flex';
-      userLink.innerHTML = `<span class="user-badge">${user.nickname} <span class="lv lv${user.current_lv}">Lv.${user.current_lv}</span></span>`;
+      const avatarHtml = user.avatar
+        ? `<img src="${user.avatar}" style="width:22px;height:22px;border-radius:50%;object-fit:cover;margin-right:4px">`
+        : '';
+      const lineTag = user.loginType === 'line'
+        ? `<span style="background:#06C755;color:#fff;font-size:9px;padding:1px 4px;border-radius:3px;margin-right:3px">LINE</span>`
+        : '';
+      userLink.innerHTML = `<span class="user-badge">${avatarHtml}${lineTag}${user.nickname} <span class="lv lv${user.current_lv||0}">Lv.${user.current_lv||0}</span></span>`;
     }
   }
 }
@@ -2249,7 +2258,60 @@ function _legacyNearbySearch(results, status){
 }
 
 window.addEventListener('hashchange', handleRoute);
+// ========== LIFF 設定 ==========
+const LIFF_ID = 'YOUR_LIFF_ID'; // LINE DevelopersコンソールのLIFF IDをここに入れる
+
+async function initLiff(){
+  // LIFF SDKが読み込まれていない場合はスキップ
+  if(typeof liff === 'undefined') return;
+
+  try {
+    await liff.init({ liffId: LIFF_ID });
+
+    // LINE内ブラウザ（LIFFクライアント）からのアクセス
+    if(liff.isInClient()){
+      if(!liff.isLoggedIn()){
+        liff.login();
+        return;
+      }
+    } else {
+      // 外部ブラウザ：LIFFログインは強制しない（通常Google/ゲストログインを使う）
+      if(!liff.isLoggedIn()) return;
+    }
+
+    // LINEプロフィール取得
+    const profile = await liff.getProfile();
+
+    // 既存のLINEユーザーが保存されていればスキップ
+    const existing = getUserData();
+    if(existing && existing.lineUserId === profile.userId) return;
+
+    // LINEプロフィールでkirein_userを設定
+    const liffUser = {
+      uid: 'line_' + profile.userId,
+      name: profile.displayName,
+      nickname: profile.displayName,
+      avatar: profile.pictureUrl || null,
+      lineUserId: profile.userId,
+      total_points: existing?.total_points || 0,
+      post_count:   existing?.post_count   || 0,
+      current_lv:   existing?.current_lv   || 0,
+      loginType: 'line',
+    };
+    localStorage.setItem('kirein_user', JSON.stringify(liffUser));
+    updateUIForLogin();
+    console.log('✅ LINEログイン完了:', profile.displayName);
+
+  } catch(e){
+    // LIFF IDが未設定 or 通常ブラウザなら静かに無視
+    if(!e.message?.includes('YOUR_LIFF_ID')){
+      console.log('LIFF init:', e.message);
+    }
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  initLiff();             // LIFFログイン（LINE内なら自動）
   initializeGooglePlaces(); // Places Service を初期化
   loadRestaurantsFromAPI(); // 飲食店データを読み込み
   updateUIForLogin();
