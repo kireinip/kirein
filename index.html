@@ -14,6 +14,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <script>
   const firebaseConfig = {
     apiKey: "AIzaSyBmd6J3uyIEkyybGVLlMR5_p9LLiHZQk3U",
@@ -28,6 +29,7 @@
     firebase.initializeApp(firebaseConfig);
     window.db      = firebase.firestore();
     window.auth    = firebase.auth();
+    window.storage = firebase.storage();
     window.firebase = firebase; // Googleログインで使用
 
     // ログイン状態を監視
@@ -706,7 +708,8 @@ function addPost(shopId, cleanliness, air, comment, fixedPoints, extra){
     sink_rating: extra?.sink || null,
     child_rating: extra?.child || null,
     comment: comment,
-    has_photo: extra?.hasPhoto || false,
+    has_photo: !!(extra?.hasPhoto || extra?.photo_url),
+    photo_url: extra?.photo_url || null,
     toilet_repeat: extra?.toilet_repeat || false,
     // 非公開データ（店舗・運営のみ）
     negative_items: extra?.negItems || [],
@@ -1372,7 +1375,7 @@ function previewPhoto(input){
   reader.readAsDataURL(input.files[0]);
 }
 
-function submitPost(e, shopId){
+async function submitPost(e, shopId){
   e.preventDefault();
 
   try {
@@ -1395,18 +1398,35 @@ function submitPost(e, shopId){
     const negItems    = [...(form.querySelectorAll('[name="neg"]:checked')||[])].map(c=>c.value);
     const negComment  = document.getElementById('negComment')?.value || '';
     const photoEl     = document.getElementById('photoInput');
-    const hasPhoto    = photoEl && photoEl.files && photoEl.files[0];
+    const photoFile   = photoEl && photoEl.files && photoEl.files[0];
 
     const status  = checkPostStatus(shopId);
     if(status.type === 'blocked'){ alert(`あと${status.waitDays}日後に投稿できます`); return; }
 
     const tierPts = calcTierPoints(tier, status);
-
-    // 集計用の安定キー（placeId）と店名を投稿に添付
     const shop = STORES.find(s => s.id === shopId);
 
+    // 写真アップロード（Firebase Storage）
+    let photoUrl = null;
+    if(photoFile && window.storage){
+      const submitBtn = document.getElementById('submitBtn');
+      if(submitBtn){ submitBtn.textContent = '📤 写真をアップロード中...'; submitBtn.disabled = true; }
+      try {
+        const uid = window.auth?.currentUser?.uid || 'anon';
+        const ext = photoFile.name.split('.').pop() || 'jpg';
+        const ref = window.storage.ref(`toilet_photos/${uid}_${Date.now()}.${ext}`);
+        await ref.put(photoFile);
+        photoUrl = await ref.getDownloadURL();
+      } catch(err) {
+        console.error('写真アップロード失敗:', err);
+        // アップロード失敗でも投稿は続行
+      }
+    }
+
     const points = addPost(shopId, cleanliness, air, comment, tierPts, {
-      tier, amenity, sink, child, negItems, negComment, hasPhoto: !!hasPhoto,
+      tier, amenity, sink, child, negItems, negComment,
+      hasPhoto: !!(photoFile || photoUrl),
+      photo_url: photoUrl,
       placeId: shop?.placeId || null, shopName: shop?.name || null,
       userUid: user?.uid || null,
       toilet_repeat: toiletRepeatSelected
@@ -2641,6 +2661,18 @@ function openModal(id){
       </div>
       <div class="tags" style="margin-bottom:6px">${s.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
 
+      ${(()=>{
+        const photos = getKireinPosts(s.id).filter(p=>p.photo_url).slice(-6);
+        if(!photos.length) return '';
+        return `
+          <div class="msec-t">📷 トイレの写真</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+            ${photos.map(p=>`
+              <img src="${p.photo_url}" alt="トイレ写真"
+                style="width:calc(33% - 6px);aspect-ratio:1;object-fit:cover;border-radius:10px;cursor:pointer"
+                onclick="window.open('${p.photo_url}','_blank')">`).join('')}
+          </div>`;
+      })()}
       <div class="msec-t">利用者のおすすめ</div>
       <div class="reviews">
         ${s.reviews.map(rv=>`<div class="rv"><div class="rt"><span>${rv.n}</span><span>${rv.t}</span></div><div class="rs">${star(rv.s)}</div><p>${rv.p}</p></div>`).join('')}
