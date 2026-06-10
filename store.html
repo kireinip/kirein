@@ -446,12 +446,14 @@ function loadNotifySettings(store){
 }
 
 async function saveNotifySettings(){
-  if(!CURRENT_USER) return;
+  const user = CURRENT_USER || window.auth?.currentUser;
+  if(!user) return;
+  CURRENT_USER = user;
   const btn = document.getElementById('notifySaveBtn');
   const saved = document.getElementById('notifySaved');
   btn.disabled = true;
   try{
-    await window.db.collection('stores').doc(CURRENT_USER.uid).set({
+    await window.db.collection('stores').doc(user.uid).set({
       notify_email:      document.getElementById('notifyEmail').value.trim() || null,
       notify_emergency:  document.getElementById('notifyEmergency').checked,
       notify_daily:      document.getElementById('notifyDaily').checked,
