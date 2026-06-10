@@ -438,6 +438,26 @@ function fallbackNicknameLogin(){
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.2 7-12A7 7 0 0 0 5 9c0 5.8 7 12 7 12Z"/><circle cx="12" cy="9" r="2.4"/></svg>
           <select id="area">
             <option value="">エリアすべて</option>
+            <option value="名駅">名古屋駅</option>
+            <option value="伏見">伏見</option>
+            <option value="丸の内">丸の内</option>
+            <option value="栄">栄</option>
+            <option value="錦">錦</option>
+            <option value="矢場町">矢場町</option>
+            <option value="大須">大須</option>
+            <option value="金山">金山</option>
+            <option value="鶴舞">鶴舞</option>
+            <option value="今池">今池</option>
+            <option value="覚王山">覚王山</option>
+            <option value="千種">千種</option>
+            <option value="本山">本山</option>
+            <option value="星ヶ丘">星ヶ丘</option>
+            <option value="高岳">高岳</option>
+            <option value="黒川">黒川</option>
+            <option value="大曽根">大曽根</option>
+            <option value="守山">守山</option>
+            <option value="緑区">緑区</option>
+            <option value="天白">天白</option>
           </select>
         </div>
         <div class="ipt" style="flex:0 0 140px">
@@ -2365,7 +2385,6 @@ const activeAttrs = new Set();
 
 // populate selects + chips
 const areaSel=document.getElementById('area'),catSel=document.getElementById('cat');
-[...new Set(STORES.map(s=>s.area))].forEach(a=>areaSel.add(new Option(a,a)));
 [...new Set(STORES.map(s=>s.cat))].forEach(c=>catSel.add(new Option(c,c)));
 const chipBox=document.getElementById('chips');
 
@@ -2468,7 +2487,7 @@ function filtered(){
     if(onlyToiletReview && TOILET_REVIEW_CACHE[s.placeId] === false) return false;
     if(onlyToiletReview && TOILET_REVIEW_CACHE[s.placeId] !== true && !toiletReviewLoading) return false;
     return (!q||s.name.includes(q)||s.area.includes(q)||s.cat.includes(q)||(s.address||'').includes(q))&&
-           (!ar||s.area===ar)&&(!ct||s.cat===ct)&&
+           (!ar||(s.address||'').includes(ar)||s.area.includes(ar))&&(!ct||s.cat===ct)&&
            [...activeAttrs].every(a=>{
              if(a==='🔄 トイレリピート') return (calcScore(s.id)?.repeatCount||0) > 0;
              return s.tags.includes(a);
