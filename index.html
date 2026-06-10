@@ -2785,6 +2785,38 @@ window.gmap = new google.maps.Map(document.getElementById('map'), {
 
 window.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 
+// Google Maps のネイティブPOIクリック → Kirein評価モーダルへ
+window.gmap.addListener('click', (e) => {
+  if (!e.placeId) return; // POI以外のクリックは無視
+  e.stop(); // Googleデフォルトの InfoWindow を抑制
+
+  // すでにSTORESに存在する場合はそのまま開く
+  const existing = STORES.find(s => s.placeId === e.placeId);
+  if (existing) {
+    openModal(existing.id);
+    return;
+  }
+
+  // 未登録の場合 → 「取得中」トースト表示
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--pine);color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:700;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.3)';
+  toast.textContent = '🔍 店舗情報を取得中...';
+  document.body.appendChild(toast);
+
+  if (!placesService) { toast.remove(); return; }
+  placesService.getDetails(
+    { placeId: e.placeId, fields: ['name', 'geometry', 'vicinity', 'types', 'place_id'], language: 'ja' },
+    (place, status) => {
+      toast.remove();
+      if (status !== google.maps.places.PlacesServiceStatus.OK || !place) return;
+      // STORES に一時追加してモーダルを開く
+      const tempStore = placeToStore(place, Math.random() * 9999 | 0);
+      STORES.push(tempStore);
+      openModal(tempStore.id);
+    }
+  );
+});
+
 // ── カード一覧クリック（イベントデリゲーション）──────────────────────
 // render() のたびに付け直す必要がないよう、#list に1回だけ登録する
 document.getElementById('list').addEventListener('click', function(e) {
