@@ -613,6 +613,15 @@ function getOrCreateUser(nickname){
     };
     localStorage.setItem('kirein_user', JSON.stringify(user));
   }
+  // Firebase 匿名認証で UID を取得（Firestore 書き込み権限に必要）
+  if(window.auth && !window.auth.currentUser){
+    window.auth.signInAnonymously().then(cred => {
+      const uid = cred.user.uid;
+      user.uid = uid;
+      localStorage.setItem('kirein_user', JSON.stringify(user));
+      console.log('✅ 匿名ログイン完了:', uid);
+    }).catch(e => console.warn('匿名ログイン失敗:', e.message));
+  }
   return user;
 }
 
@@ -688,7 +697,7 @@ function addPost(shopId, cleanliness, air, comment, fixedPoints, extra){
     // 全デバイスで安定する識別子（店舗ダッシュボードはこれをキーに集計）
     place_id: extra?.placeId || null,
     shop_name: extra?.shopName || null,
-    user_uid: extra?.userUid || null,  // ← 投稿者UID（ネガティブ情報のアクセス制御用）
+    user_uid: window.auth?.currentUser?.uid || extra?.userUid || null,  // ← Firebase Auth UID優先（Firestore権限に必要）
     tier: extra?.tier || 'simple',
     // 公開データ
     cleanliness_rating: cleanliness,
