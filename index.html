@@ -394,6 +394,11 @@ function fallbackNicknameLogin(){
     .mapwrap{position:relative;top:0;height:340px;min-height:0;order:-1}
     .searchbar{flex-direction:column}
     .searchbar .btn{padding:13px}
+
+    /* 検索フィールド：スマホでは縦積み */
+    .searchbar .fieldset{flex-wrap:wrap;gap:8px}
+    .searchbar .fieldset .ipt:first-child{flex:1 1 100% !important}
+    .searchbar .fieldset .ipt:not(:first-child){flex:1 1 calc(50% - 4px) !important;min-width:0}
   }
 </style>
 </head>
