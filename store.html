@@ -221,41 +221,6 @@ header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.96);backdro
         <div id="reviews"></div>
       </div>
 
-      <div class="panel" id="notifyPanel">
-        <h2>メール通知の設定</h2>
-        <div class="panel-sub">通知先・ON/OFFを変更するとすぐに反映されます</div>
-        <div class="notify-row">
-          <div class="notify-label">
-            <div class="notify-title">通知先メールアドレス</div>
-            <div class="notify-desc">ログインに使うGoogleメール以外に送りたい場合に入力（未入力ならGoogleアカウントのメールに送信）</div>
-          </div>
-          <input id="notifyEmail" class="input" type="email" placeholder="例：owner@example.com" style="max-width:280px" />
-        </div>
-        <div class="notify-row">
-          <div class="notify-label">
-            <div class="notify-title">🚨 緊急通報</div>
-            <div class="notify-desc">深刻な評価（足切り項目・ネガ指摘・ネガコメントあり）が投稿されたら5分以内にメール</div>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" id="notifyEmergency" />
-            <span class="toggle-track"><span class="toggle-thumb"></span></span>
-          </label>
-        </div>
-        <div class="notify-row">
-          <div class="notify-label">
-            <div class="notify-title">📋 日次レポート</div>
-            <div class="notify-desc">前日の全投稿をまとめて翌朝9時台にメール（投稿がなかった日は送信しない）</div>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" id="notifyDaily" />
-            <span class="toggle-track"><span class="toggle-thumb"></span></span>
-          </label>
-        </div>
-        <div style="text-align:right;margin-top:20px">
-          <button class="btn btn-mint btn-sm" id="notifySaveBtn" onclick="saveNotifySettings()">設定を保存</button>
-          <span id="notifySaved" style="font-size:12px;color:var(--mint);margin-left:12px;display:none">✓ 保存しました</span>
-        </div>
-      </div>
     </div>
 
     <div id="dashEmpty" class="panel hidden">
@@ -263,6 +228,42 @@ header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.96);backdro
         <div class="ico">📭</div>
         <div class="ttl">まだお客様の投稿がありません</div>
         <div>トイレや店頭にキレインのQR・案内を掲示すると、来店したお客様が評価を投稿してくれます。<br>投稿が集まると、ここに清潔さの評価・改善点・口コミが表示されます。</div>
+      </div>
+    </div>
+
+    <div class="panel hidden" id="notifyPanel">
+      <h2>メール通知の設定</h2>
+      <div class="panel-sub">通知先・ON/OFFを変更するとすぐに反映されます</div>
+      <div class="notify-row">
+        <div class="notify-label">
+          <div class="notify-title">通知先メールアドレス</div>
+          <div class="notify-desc">ログインに使うGoogleメール以外に送りたい場合に入力（未入力ならGoogleアカウントのメールに送信）</div>
+        </div>
+        <input id="notifyEmail" class="input" type="email" placeholder="例：owner@example.com" style="max-width:280px" />
+      </div>
+      <div class="notify-row">
+        <div class="notify-label">
+          <div class="notify-title">🚨 緊急通報</div>
+          <div class="notify-desc">深刻な評価（足切り項目・ネガ指摘・ネガコメントあり）が投稿されたら5分以内にメール</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="notifyEmergency" />
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        </label>
+      </div>
+      <div class="notify-row">
+        <div class="notify-label">
+          <div class="notify-title">📋 日次レポート</div>
+          <div class="notify-desc">前日の全投稿をまとめて翌朝9時台にメール（投稿がなかった日は送信しない）</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="notifyDaily" />
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        </label>
+      </div>
+      <div style="text-align:right;margin-top:20px">
+        <button class="btn btn-mint btn-sm" id="notifySaveBtn" onclick="saveNotifySettings()">設定を保存</button>
+        <span id="notifySaved" style="font-size:12px;color:var(--mint);margin-left:12px;display:none">✓ 保存しました</span>
       </div>
     </div>
   </div>
@@ -310,7 +311,7 @@ window.auth.onAuthStateChanged(async (user)=>{
   }
   hr.innerHTML = `<div class="user-chip">
       ${user.photoURL?`<img src="${user.photoURL}" alt="">`:''}
-      <span>${user.displayName||user.email}</span>
+      <span>${user.displayName||user.email||'オーナー'}</span>
       <button class="btn btn-ghost btn-sm" onclick="logout()">ログアウト</button>
     </div>`;
 
@@ -408,6 +409,7 @@ async function loadDashboard(store){
   document.getElementById('dashLoading').classList.remove('hidden');
   document.getElementById('dashContent').classList.add('hidden');
   document.getElementById('dashEmpty').classList.add('hidden');
+  document.getElementById('notifyPanel').classList.add('hidden');
 
   let posts = [];
   try{
@@ -422,6 +424,9 @@ async function loadDashboard(store){
 
   document.getElementById('dashLoading').classList.add('hidden');
 
+  document.getElementById('notifyPanel').classList.remove('hidden');
+  loadNotifySettings(store);
+
   if(posts.length === 0){
     document.getElementById('dashEmpty').classList.remove('hidden');
     return;
@@ -432,7 +437,6 @@ async function loadDashboard(store){
   renderMetrics(posts);
   renderNegatives(posts);
   renderReviews(posts);
-  loadNotifySettings(store);
 }
 
 function loadNotifySettings(store){
