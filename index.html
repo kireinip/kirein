@@ -412,7 +412,7 @@ function fallbackNicknameLogin(){
     </a>
     <div class="head-cta">
       <a class="owner" href="./owner.html">店舗オーナーの方へ</a>
-      <a id="searchBtn" class="btn sm ghost" href="#/">探す</a>
+      <a id="searchBtn" class="btn sm ghost" href="#/" onclick="document.querySelector('.hero').scrollIntoView({behavior:'smooth'});return false;">探す</a>
       <button id="loginBtn" class="btn sm ghost" onclick="handleLoginClick()" style="font-family:inherit">🔑 ログイン</button>
       <a id="userLink" class="btn sm mint" href="#/mypage" style="display:none">マイページ</a>
       <a id="postBtn" class="btn sm mint" href="#/post">投稿する</a>
