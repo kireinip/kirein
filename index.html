@@ -2130,6 +2130,8 @@ document.addEventListener('DOMContentLoaded', () => {
   loadRestaurantsFromAPI(); // 飲食店データを読み込み
   updateUIForLogin();
   handleRoute();
+  // 現在地から探す をデフォルトON
+  setTimeout(() => searchByGPS(), 500);
 });
 
 // ダミーデータ削除済み。実在店舗のみ Google Places API から取得
