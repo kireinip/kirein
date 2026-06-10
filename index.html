@@ -2424,8 +2424,9 @@ function hl(id,on){
 }
 
 function openModal(id){
-  const s=STORES.find(x=>x.id===id);
-  if(!s) { console.warn('店舗が見つかりません:', id); return; }
+  alert('openModal called with id: ' + id);
+  const s=STORES.find(x=>x.id==id);
+  if(!s) { alert('店舗が見つかりません: ' + id); return; }
   document.getElementById('modal').innerHTML=`
     <div class="mhead">
       <button class="close" onclick="closeModal()">×</button>
