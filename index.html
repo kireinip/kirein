@@ -2144,70 +2144,66 @@ function nearbySearchWithPagination(request, allResults, resolve){
   });
 }
 
-function loadRestaurantsFromAPI(){
-  const cacheKey = 'kirein_restaurants_v5';
-  const cached = localStorage.getItem(cacheKey);
-  if(cached){
-    try{
-      const { stores, timestamp } = JSON.parse(cached);
-      const age = Date.now() - timestamp;
-      if(stores && stores.length > 0 && age < 24 * 60 * 60 * 1000){
+async function loadRestaurantsFromAPI(){
+  const LOCAL_KEY = 'kirein_stores_v1';
+  const WEEK_MS   = 7 * 24 * 60 * 60 * 1000;
+  const HOUR_MS   =     60 * 60 * 1000;
+
+  // 1. localStorage（1時間以内なら即利用）
+  try{
+    const raw = localStorage.getItem(LOCAL_KEY);
+    if(raw){
+      const { stores, timestamp } = JSON.parse(raw);
+      if(stores?.length > 0 && Date.now() - timestamp < HOUR_MS){
         STORES = stores;
-        console.log(`✅ キャッシュから${stores.length}店舗を復元`);
-        render();
-        return;
+        console.log(`✅ ローカルキャッシュ: ${stores.length}店舗`);
+        render(); return;
       }
-    }catch(e){ console.log('キャッシュ読み込みエラー:', e); }
+    }
+  }catch(e){}
+
+  // 2. Firestore 共有キャッシュ（週1回GASが更新）
+  if(window.db){
+    try{
+      const doc = await window.db.collection('cache').doc('restaurants').get();
+      if(doc.exists){
+        const d = doc.data();
+        const age = Date.now() - new Date(d.updated_at).getTime();
+        if(age < WEEK_MS && d.data){
+          const stores = JSON.parse(d.data);
+          if(stores?.length > 0){
+            STORES = stores;
+            try{ localStorage.setItem(LOCAL_KEY, JSON.stringify({ stores, timestamp: Date.now() })); }catch(e){}
+            console.log(`✅ Firestoreキャッシュ: ${stores.length}店舗`);
+            render(); return;
+          }
+        }
+      }
+    }catch(e){ console.warn('Firestore cache read error:', e.message); }
   }
 
-  if(!placesService){
-    console.log('⚠️ Places Service 未初期化');
-    return;
-  }
+  // 3. 初回 or キャッシュ切れ → Places API で直接取得（GASが動くまでの暫定）
+  if(!placesService){ console.log('⚠️ Places Service 未初期化'); return; }
 
-  // restaurant（レストラン） + bar（居酒屋） + cafe（カフェランチ）を取得
-  const SEARCH_TYPES = ['restaurant', 'bar', 'cafe'];
-  console.log(`📍 名古屋${NAGOYA_SEARCH_POINTS.length}エリア × ${SEARCH_TYPES.length}種類の飲食店を取得中...`);
+  console.log(`📍 Places API から取得中（初回のみ）...`);
   STORES = [];
-
+  const SEARCH_TYPES = ['restaurant', 'bar', 'cafe'];
   let typeIdx = 0;
 
   function searchNextType(){
     if(typeIdx >= SEARCH_TYPES.length){
-      // 全種類・全エリア完了 → キャッシュ保存
-      try {
-        localStorage.setItem(cacheKey, JSON.stringify({ stores: STORES, timestamp: Date.now() }));
-      } catch(e) {
-        localStorage.removeItem('kirein_restaurants_v3');
-        localStorage.removeItem('kirein_restaurants_v2');
-        localStorage.removeItem('kirein_restaurants_cache');
-        try { localStorage.setItem(cacheKey, JSON.stringify({ stores: STORES, timestamp: Date.now() })); } catch(e2){}
-      }
-      console.log(`🎉 名古屋全域 ${STORES.length}店舗の取得完了！`);
-      render();
-      return;
+      try{ localStorage.setItem(LOCAL_KEY, JSON.stringify({ stores: STORES, timestamp: Date.now() })); }catch(e){}
+      console.log(`🎉 ${STORES.length}店舗取得完了`);
+      render(); return;
     }
-    const currentType = SEARCH_TYPES[typeIdx++];
-    console.log(`🔍 ${currentType} を検索中...`);
+    const type = SEARCH_TYPES[typeIdx++];
     let idx = 0;
     function searchNextPoint(){
-      if(idx >= NAGOYA_SEARCH_POINTS.length){
-        console.log(`✅ ${currentType} 完了: 累計${STORES.length}件`);
-        setTimeout(searchNextType, 500); // 次のタイプへ
-        return;
-      }
+      if(idx >= NAGOYA_SEARCH_POINTS.length){ setTimeout(searchNextType, 500); return; }
       const point = NAGOYA_SEARCH_POINTS[idx++];
       new Promise(resolve => {
-        nearbySearchWithPagination({
-          location: { lat: point.lat, lng: point.lng },
-          radius: 1200,
-          type: currentType,
-          language: 'ja'
-        }, [], resolve);
-      }).then(() => {
-        render(); // 取得するたびにリアルタイム更新
-        setTimeout(searchNextPoint, 500);
-      });
+        nearbySearchWithPagination({ location: { lat: point.lat, lng: point.lng }, radius: 1200, type, language: 'ja' }, [], resolve);
+      }).then(() => { render(); setTimeout(searchNextPoint, 500); });
     }
     searchNextPoint();
   }
