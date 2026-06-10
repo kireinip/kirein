@@ -1087,9 +1087,15 @@ function checkPostStatus(shopId){
     const allPosts = getPosts().filter(p => p.shop_id === shopId);
     return { type:'first', points: getCampaignMultiplier() * 50, isVirginStore: allPosts.length === 0 };
   }
+
+  // Lv3（公認調査員）は7日、それ以外は30日の制限
+  const user = getUserData();
+  const isLv3 = user && (user.current_lv || 0) >= 3;
+  const limitDays = isLv3 ? 7 : 30;
+
   const diffDays = Math.floor((new Date() - new Date(posts[0].created_at)) / 86400000);
-  if(diffDays < 30){
-    return { type:'blocked', waitDays: 30 - diffDays };
+  if(diffDays < limitDays){
+    return { type:'blocked', waitDays: limitDays - diffDays, isLv3 };
   }
   return { type:'return', points: 10, isVirginStore: false };
 }
@@ -1129,8 +1135,8 @@ function proceedToPostForm(shopId){
         <div style="font-size:48px;margin:10px 0">⏳</div>
         <div style="font-size:18px;font-weight:700;color:var(--pine);margin:16px 0">あと ${status.waitDays} 日後に投稿できます</div>
         <div style="background:var(--bg-soft);border-radius:12px;padding:16px;margin:16px 0;font-size:13px;color:var(--muted);line-height:1.8">
-          同じお店への投稿は<b style="color:var(--pine)">1ヶ月に1回</b>まで。<br>
-          再来店してからまた投稿してください！<br>
+          同じお店への投稿は<b style="color:var(--pine)">${status.isLv3 ? '7日に1回' : '1ヶ月に1回'}</b>まで。<br>
+          ${status.isLv3 ? '👑 Lv.3 公認調査員特典：通常より短いサイクルで再投稿できます！<br>' : ''}再来店してからまた投稿してください！<br>
           再来店投稿では <b style="color:var(--mint)">+10pt</b> 獲得できます。
         </div>
         <button class="btn ghost" onclick="closeModal()" style="width:100%;justify-content:center;padding:13px">閉じる</button>
