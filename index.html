@@ -2215,6 +2215,9 @@ function calcStoreRank(shopId){
 }
 
 let onlyCertified = false; // キレイン認定店フィルター
+let onlyToiletReview = false; // Googleトイレ口コミありフィルター
+let toiletReviewLoading = false; // 取得中フラグ
+const TOILET_REVIEW_CACHE = {}; // placeId → true/false （取得済みキャッシュ）
 const activeAttrs = new Set();
 
 // populate selects + chips
@@ -2240,6 +2243,70 @@ certChip.onclick=()=>{
 };
 chipBox.appendChild(certChip);
 
+// Googleトイレ口コミありチップ
+const toiletChip = document.createElement('button');
+toiletChip.className = 'chip';
+toiletChip.innerHTML = '🚽 トイレ口コミあり';
+toiletChip.style.cssText = 'background:#fff;color:var(--pine);border:1.5px solid var(--line);font-weight:600';
+toiletChip.onclick = async () => {
+  if(toiletReviewLoading) return; // 取得中はクリック無効
+  onlyToiletReview = !onlyToiletReview;
+  if(!onlyToiletReview){
+    // OFF
+    toiletChip.innerHTML = '🚽 トイレ口コミあり';
+    toiletChip.style.cssText = 'background:#fff;color:var(--pine);border:1.5px solid var(--line);font-weight:600';
+    render();
+    return;
+  }
+  // ON → 取得開始
+  toiletChip.style.cssText = 'background:#fff7e6;color:#b85c00;border:1.5px solid #f0a030;font-weight:600';
+  toiletReviewLoading = true;
+  render(); // フィルターON（取得中は既存キャッシュで表示）
+
+  // 現在の表示順の先頭からplaceIdある店舗を最大50件取得
+  const targets = STORES.filter(s => s.placeId && !(s.placeId in TOILET_REVIEW_CACHE));
+  // GPS順 or 現在表示順から上位50件
+  const sorted = gpsSearchActive && gpsSearchLocation
+    ? [...targets].sort((a,b) =>
+        calculateDistance(gpsSearchLocation.lat, gpsSearchLocation.lng, a.lat||35.17, a.lng||136.88) -
+        calculateDistance(gpsSearchLocation.lat, gpsSearchLocation.lng, b.lat||35.17, b.lng||136.88)
+      ).slice(0, 50)
+    : targets.slice(0, 50);
+
+  let done = 0;
+  for(const store of sorted){
+    await new Promise(resolve => {
+      if(!placesService){ TOILET_REVIEW_CACHE[store.placeId] = false; done++; resolve(); return; }
+      placesService.getDetails(
+        { placeId: store.placeId, fields: ['reviews'], language: 'ja' },
+        (place, status) => {
+          if(status === google.maps.places.PlacesServiceStatus.OK && place?.reviews?.length){
+            TOILET_REVIEW_CACHE[store.placeId] = place.reviews.some(r =>
+              TOILET_KEYWORDS.some(kw => (r.text||'').includes(kw))
+            );
+          } else {
+            TOILET_REVIEW_CACHE[store.placeId] = false;
+          }
+          done++;
+          const hitCount = Object.values(TOILET_REVIEW_CACHE).filter(v=>v===true).length;
+          toiletChip.innerHTML = `🚽 確認中… ${done}/${sorted.length}（${hitCount}件ヒット）`;
+          render();
+          resolve();
+        }
+      );
+    });
+    await new Promise(r => setTimeout(r, 150)); // レート制限
+  }
+
+  // 完了
+  toiletReviewLoading = false;
+  const finalHit = Object.values(TOILET_REVIEW_CACHE).filter(v=>v===true).length;
+  toiletChip.innerHTML = `🚽 トイレ口コミあり（${finalHit}件）`;
+  toiletChip.style.cssText = 'background:#e6f5f1;color:#0e3a33;border:1.5px solid var(--mint);font-weight:700;box-shadow:0 2px 8px rgba(37,181,152,.3)';
+  render();
+};
+chipBox.appendChild(toiletChip);
+
 ATTRS.forEach(a=>{
   const b=document.createElement('button');b.className='chip';b.textContent=a;
   b.onclick=()=>{b.classList.toggle('on');activeAttrs.has(a)?activeAttrs.delete(a):activeAttrs.add(a);render();};
@@ -2254,6 +2321,9 @@ function filtered(){
   let r=STORES.filter(s=>{
     const rank = calcStoreRank(s.id);
     if(onlyCertified && rank==='bronze') return false; // 認定店フィルター
+    if(onlyToiletReview && !s.placeId) return false; // placeIdなしは除外
+    if(onlyToiletReview && TOILET_REVIEW_CACHE[s.placeId] === false) return false; // 口コミなし確定を除外
+    if(onlyToiletReview && TOILET_REVIEW_CACHE[s.placeId] !== true && !toiletReviewLoading) return false; // 未取得も非表示（取得完了後）
     return (!q||s.name.includes(q)||s.area.includes(q)||s.cat.includes(q)||(s.address||'').includes(q))&&
            (!ar||s.area===ar)&&(!ct||s.cat===ct)&&
            [...activeAttrs].every(a=>s.tags.includes(a));
