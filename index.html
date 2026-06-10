@@ -1852,7 +1852,7 @@ function getHighAccuracyLocation(){
       {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 30000        // 30秒以内のキャッシュを許容（モバイルでの初回取得を高速化）
+        maximumAge: 0
       }
     );
   });
