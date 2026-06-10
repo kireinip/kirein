@@ -1850,9 +1850,9 @@ function getHighAccuracyLocation(){
       },
       () => resolve(null),
       {
-        enableHighAccuracy: true, // 高精度GPS
+        enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 0            // キャッシュ不使用（最新の位置情報）
+        maximumAge: 30000        // 30秒以内のキャッシュを許容（モバイルでの初回取得を高速化）
       }
     );
   });
@@ -2355,8 +2355,8 @@ document.addEventListener('DOMContentLoaded', () => {
   loadRestaurantsFromAPI(); // 飲食店データを読み込み
   updateUIForLogin();
   handleRoute();
-  // 現在地から探す をデフォルトON
-  setTimeout(() => searchByGPS(), 500);
+  // 現在地から探す をデフォルトON（stores ロード完了と並行して GPS 取得開始）
+  _autoGPS();
 });
 
 // ダミーデータ削除済み。実在店舗のみ Google Places API から取得
@@ -2620,6 +2620,57 @@ async function searchByGPS(){
   }
 
   render(); // 距離順で再レンダリング
+}
+
+// ページ読み込み時の自動GPS起動（トグル無し・store ロードと競合しない）
+let _autoGPSDone = false;
+async function _autoGPS(){
+  if(_autoGPSDone || gpsSearchActive) return;
+  _autoGPSDone = true;
+
+  const btn    = document.getElementById('gpsSearchBtn');
+  const status = document.getElementById('gpsStatus');
+  if(!btn || !status) return;
+
+  btn.innerHTML = '⏳ 現在地を取得中...';
+  status.textContent = '';
+  status.style.display = 'inline';
+  status.style.color = '#9ecfc8';
+
+  const loc = await getHighAccuracyLocation();
+  if(!loc){
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" stroke-dasharray="2 4"/></svg> 📍 現在地から探す`;
+    status.style.display = 'none';
+    return;
+  }
+
+  gpsSearchActive   = true;
+  gpsSearchLocation = loc;
+  areaSel.value = '';
+  catSel.value  = '';
+  document.getElementById('q').value = '';
+  btn.style.background  = 'rgba(37,181,152,.35)';
+  btn.style.borderColor = 'var(--mint)';
+  btn.innerHTML = `✅ 現在地から探している（解除する）`;
+  status.textContent = `📍 精度 ±${loc.accuracy}m`;
+  status.style.display = 'inline';
+  status.style.color   = '#9ecfc8';
+
+  if(window.gmap){
+    window.gmap.setCenter({ lat: loc.lat, lng: loc.lng });
+    window.gmap.setZoom(15);
+    if(window.myLocationMarker) window.myLocationMarker.setMap(null);
+    window.myLocationMarker = new google.maps.Marker({
+      position: { lat: loc.lat, lng: loc.lng },
+      map: window.gmap,
+      title: '現在地',
+      icon: { path: google.maps.SymbolPath.CIRCLE, scale: 10,
+              fillColor: '#25b598', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 }
+    });
+  }
+
+  // stores が既にロード済みなら即 render、未ロードなら loadRestaurantsFromAPI の render() が GPS モードで動く
+  if(STORES.length > 0) render();
 }
 
 function goToPost(storeId){
