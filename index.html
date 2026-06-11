@@ -985,9 +985,6 @@ function renderUnreviewedStores(){
       <button onclick="proceedToPostForm(${s.id})" class="btn sm mint" style="white-space:nowrap;padding:8px 14px;font-size:12px;flex-shrink:0">10秒評価</button>
     </div>
   `).join('');
-
-  const section = document.getElementById('unreviewedSection');
-  if(section) section.style.display = '';
 }
 
 // Firestore から特定店舗の投稿を取得（compat版）
