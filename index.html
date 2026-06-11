@@ -358,6 +358,26 @@ function fallbackNicknameLogin(){
   .rform .note{font-size:11px;color:var(--muted);background:var(--mint-soft);border-radius:9px;padding:9px 12px;margin:12px 0;line-height:1.6}
   .rform .btn{width:100%;justify-content:center;padding:13px}
 
+  /* 1000件チャレンジバナー */
+  .challenge-section{background:linear-gradient(135deg,#e8f5f0,#d0ece5);padding:28px 0 24px;border-top:2px solid rgba(37,181,152,.3)}
+  .challenge-title{font-size:18px;font-weight:700;color:var(--pine);margin-bottom:4px}
+  .challenge-sub{font-size:13px;color:var(--muted);margin-bottom:12px}
+  .challenge-count-wrap{display:flex;align-items:baseline;gap:2px;margin:4px 0 8px}
+  .challenge-count-wrap #challenge-count{font-size:44px;font-weight:700;color:var(--pine);line-height:1;font-variant-numeric:tabular-nums}
+  .challenge-count-wrap .challenge-denom{font-size:14px;color:var(--muted)}
+  .area-gauges{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0 4px}
+  @media(max-width:500px){.area-gauges{grid-template-columns:repeat(2,1fr)}}
+  .area-gauge{background:rgba(255,255,255,.8);border-radius:10px;padding:10px 12px}
+  .area-gauge .ag-name{font-size:11px;font-weight:700;color:var(--pine)}
+  .area-gauge .ag-count{font-size:20px;font-weight:700;color:var(--mint);margin:2px 0}
+  .area-gauge .ag-target{font-size:10px;color:var(--muted)}
+  .area-gauge .ag-bar{width:100%;height:5px;background:rgba(0,0,0,.1);border-radius:999px;overflow:hidden;margin-top:4px}
+  .area-gauge .ag-fill{height:100%;background:linear-gradient(90deg,var(--mint),#1ea487);transition:width .5s}
+  /* 未評価リスト */
+  .unreviewed-section{border-top:1px solid var(--line);background:#fff}
+  /* 初代称号バッジ */
+  .initial-badge{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:999px;font-size:13px;font-weight:700;margin:10px 0}
+
   /* user badge + mypage */
   .user-badge{display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:999px;background:var(--mint-soft);color:var(--pine);font-size:12px;font-weight:700}
   .user-badge .lv{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--mint);color:#fff;font-size:10px}
@@ -421,7 +441,7 @@ function fallbackNicknameLogin(){
       <a id="searchBtn" class="btn sm ghost" href="#/" onclick="event.preventDefault();window.scrollTo({top:0,behavior:'smooth'});">探す</a>
       <button id="loginBtn" class="btn sm ghost" onclick="handleLoginClick()" style="font-family:inherit">🔑 ログイン</button>
       <a id="userLink" class="btn sm mint" href="#/mypage" style="display:none">マイページ</a>
-      <a id="postBtn" class="btn sm mint" href="#/post">投稿する</a>
+      <a id="postBtn" class="btn sm mint" href="#/post">10秒でトイレ評価</a>
     </div>
   </div>
 </header>
@@ -558,6 +578,36 @@ function fallbackNicknameLogin(){
   </div>
 
 </div>
+
+<!-- 1000件チャレンジバナー -->
+<section class="challenge-section">
+  <div class="wrap">
+    <div style="font-size:12px;color:var(--mint);font-weight:700;letter-spacing:.5px;margin-bottom:6px">🗺️ 参加型プロジェクト</div>
+    <div class="challenge-title">名古屋トイレマップ 1000件チャレンジ</div>
+    <div class="challenge-sub">あなたの10秒評価が、次の人のお店選びを助けます</div>
+    <div class="challenge-count-wrap">
+      <span id="challenge-count">0</span>
+      <span class="challenge-denom">&thinsp;/ 1,000件</span>
+    </div>
+    <div class="progress-bar">
+      <div id="challenge-fill" class="progress-fill" style="width:0%"></div>
+    </div>
+    <div id="area-gauges" class="area-gauges"></div>
+    <a href="#/post" class="btn mint" style="display:flex;width:100%;justify-content:center;padding:13px;margin-top:16px;font-size:15px;box-sizing:border-box">
+      📝 10秒でトイレを評価する
+    </a>
+    <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:8px">写真不要・長文不要・匿名OK。ネガティブ情報は非公開。</div>
+  </div>
+</section>
+
+<!-- 未評価店舗リスト -->
+<section class="unreviewed-section" id="unreviewedSection" style="display:none">
+  <div class="wrap" style="padding:28px 0">
+    <h2 style="font-size:18px;color:var(--pine);margin-bottom:4px">📋 評価を待っているお店</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px">来店したことがあれば10秒で評価してください</p>
+    <div id="unreviewedList"></div>
+  </div>
+</section>
 
 <!-- SEO -->
 <section class="seo">
@@ -709,6 +759,93 @@ async function savePostToFirestore(post){
   } catch(e) {
     console.error('❌ Firestore 保存エラー:', e);
   }
+}
+
+// ========== 1000件チャレンジ統計 ==========
+
+async function loadGlobalStats(){
+  if(!window.db) return { total_posts: 0 };
+  try {
+    const doc = await window.db.collection('stats').doc('summary').get();
+    return doc.exists ? doc.data() : { total_posts: 0 };
+  } catch(e){ return { total_posts: 0 }; }
+}
+
+async function incrementGlobalStats(area){
+  if(!window.db) return;
+  const update = { total_posts: firebase.firestore.FieldValue.increment(1) };
+  if(area && area !== '名古屋') update['area_' + area] = firebase.firestore.FieldValue.increment(1);
+  try {
+    await window.db.collection('stats').doc('summary').set(update, { merge: true });
+  } catch(e){ console.warn('stats increment failed', e); }
+}
+
+function updateChallengeUI(total){
+  const el   = document.getElementById('challenge-count');
+  const fill = document.getElementById('challenge-fill');
+  if(el)   el.textContent  = (total || 0).toLocaleString();
+  if(fill) fill.style.width = Math.min(100, ((total||0) / 1000) * 100) + '%';
+}
+
+function renderAreaGauges(stats){
+  const container = document.getElementById('area-gauges');
+  if(!container) return;
+  const areas   = ['栄','名駅','大須','錦','金山','覚王山'];
+  const targets = { '栄':100,'名駅':100,'大須':50,'錦':100,'金山':50,'覚王山':30 };
+  container.innerHTML = areas.map(area => {
+    const count  = stats['area_' + area] || 0;
+    const target = targets[area] || 50;
+    const pct    = Math.min(100, (count / target) * 100);
+    return `<div class="area-gauge">
+      <div class="ag-name">${area}</div>
+      <div class="ag-count">${count}</div>
+      <div class="ag-target">目標 ${target}件</div>
+      <div class="ag-bar"><div class="ag-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderUnreviewedStores(){
+  if(window._unreviewedDone) return;
+  const container = document.getElementById('unreviewedList');
+  if(!container || STORES.length === 0) return;
+  window._unreviewedDone = true;
+
+  const targetAreas = ['栄','名駅','大須','錦','金山','覚王山','矢場町'];
+  const picks = [];
+  const usedIds = new Set();
+
+  for(const area of targetAreas){
+    if(picks.length >= 5) break;
+    const cands = STORES.filter(s => {
+      const a = s.area || '';
+      return (a === area || a.includes(area)) && !usedIds.has(s.id);
+    });
+    if(cands.length > 0){
+      const pick = cands[Math.floor(Math.random() * cands.length)];
+      picks.push(pick);
+      usedIds.add(pick.id);
+    }
+  }
+  // 足りなければランダム補完
+  let tries = 0;
+  while(picks.length < 5 && tries++ < 200){
+    const r = STORES[Math.floor(Math.random() * STORES.length)];
+    if(!usedIds.has(r.id)){ picks.push(r); usedIds.add(r.id); }
+  }
+
+  container.innerHTML = picks.slice(0,5).map(s => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:8px">
+      <div style="flex:1;min-width:0;margin-right:10px">
+        <div style="font-weight:700;color:var(--pine);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${s.area} ・ まだ評価がありません</div>
+      </div>
+      <button onclick="proceedToPostForm(${s.id})" class="btn sm mint" style="white-space:nowrap;padding:8px 14px;font-size:12px;flex-shrink:0">10秒評価</button>
+    </div>
+  `).join('');
+
+  const section = document.getElementById('unreviewedSection');
+  if(section) section.style.display = '';
 }
 
 // Firestore から特定店舗の投稿を取得（compat版）
@@ -1484,6 +1621,11 @@ async function submitPost(e, shopId){
     const updatedUser = updateUserPoints(points);
     if(shop) shop.kirei += 1;
 
+    // グローバル統計インクリメント（Firestore非同期）
+    window.kireinTotalPosts = (window.kireinTotalPosts || 0) + 1;
+    updateChallengeUI(window.kireinTotalPosts);
+    incrementGlobalStats(shop?.area || '');
+
     // render() は探すページが表示中の時だけ呼ぶ
     try { render(); } catch(err) { /* 投稿ページ表示中は不要 */ }
 
@@ -1501,7 +1643,17 @@ async function submitPost(e, shopId){
           <div style="font-size:36px;font-weight:700;color:var(--pine)">${updatedUser.total_points}pt</div>
           <div style="margin-top:8px;color:var(--muted);font-size:13px">Lv.${updatedUser.current_lv} ${['ビジター','認定レポーター','見習い調査員','公認調査員'][updatedUser.current_lv]}</div>
         </div>
-        <div style="color:var(--muted);font-size:12px;margin-bottom:12px">投稿ありがとうございます！</div>
+        <div style="background:linear-gradient(135deg,#e8f5f0,#d0ece5);border-radius:12px;padding:14px;margin:12px 0">
+          <div style="font-size:13px;font-weight:700;color:var(--pine);margin-bottom:6px">🗺️ 名古屋の清潔マップが1件増えました！</div>
+          <div style="font-size:26px;font-weight:700;color:var(--pine);line-height:1">${(window.kireinTotalPosts||0).toLocaleString()} <span style="font-size:13px;color:var(--muted);font-weight:400">/ 1,000件</span></div>
+          <div class="progress-bar" style="margin:8px 0 0">
+            <div class="progress-fill" style="width:${Math.min(100,((window.kireinTotalPosts||0)/1000)*100)}%"></div>
+          </div>
+          ${(updatedUser.post_count||0) === 1 ? '<div style="font-size:12px;color:var(--mint);margin-top:8px;font-weight:700">🌱 初代レポーター候補に認定されました！</div>' : ''}
+          ${(updatedUser.post_count||0) === 3 ? '<div style="font-size:12px;color:var(--mint);margin-top:8px;font-weight:700">⭐ 初代キレインレポーター認定！あと7件でエリア開拓者へ</div>' : ''}
+          ${(updatedUser.post_count||0) === 10 ? '<div style="font-size:12px;color:#1565C0;margin-top:8px;font-weight:700">🗺️ エリア開拓者認定！素晴らしい貢献です</div>' : ''}
+          ${(updatedUser.post_count||0) === 30 ? '<div style="font-size:12px;color:#8B4513;margin-top:8px;font-weight:700">🏆 公式アンバサダー候補！運営からご連絡します</div>' : ''}
+        </div>
         ${updatedUser.current_lv < 3 ? `
         <div style="background:#fff8e1;border:1px solid #f0c040;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#7a6000;display:flex;align-items:center;gap:8px">
           <span style="font-size:16px">🎁</span>
@@ -1575,6 +1727,29 @@ function showMyPage(){
         </div>
       </div>
 
+      ${(()=>{
+        const pc = user.post_count || 0;
+        const total = window.kireinTotalPosts || 0;
+        const pct = Math.min(100, (total/1000)*100).toFixed(1);
+        let badge = null;
+        if(pc >= 30) badge = { icon:'🏆', title:'公式アンバサダー候補', desc:'30件以上の投稿を達成。運営から特別ご連絡します！', bg:'#fff8f0', border:'#e0a040', color:'#8B4513' };
+        else if(pc >= 10) badge = { icon:'🗺️', title:'エリア開拓者', desc:'10件以上の投稿でエリアを切り開きました', bg:'#e8f0ff', border:'#90aae0', color:'#1565C0' };
+        else if(pc >= 3)  badge = { icon:'⭐', title:'初代キレインレポーター', desc:'3件以上の投稿で初代レポーター認定！1000件達成前限定の称号です', bg:'#e8f5e9', border:'#80c880', color:'#2e7d32' };
+        else if(pc >= 1)  badge = { icon:'🌱', title:'初代レポーター候補', desc:`あと${3-pc}件の投稿で「初代キレインレポーター」認定`, bg:'#fff8e1', border:'#f0c040', color:'#7a6000' };
+        if(!badge) return '';
+        return `<div class="mypage-card" style="border-color:${badge.border};background:${badge.bg}">
+          <h2 style="color:${badge.color}">${badge.icon} 初代称号</h2>
+          <div class="initial-badge" style="background:${badge.border}20;border:2px solid ${badge.border};color:${badge.color}">
+            ${badge.icon} ${badge.title}
+          </div>
+          <div style="font-size:12px;color:${badge.color};margin-top:4px;line-height:1.6">${badge.desc}</div>
+          <div style="margin-top:12px;font-size:12px;color:var(--muted)">
+            🗺️ 名古屋チャレンジ達成状況：<b style="color:var(--pine)">${total.toLocaleString()} / 1,000件</b>（${pct}%）
+          </div>
+          <div class="progress-bar" style="margin-top:6px"><div class="progress-fill" style="width:${pct}%"></div></div>
+        </div>`;
+      })()}
+
       <div class="mypage-card">
         <h2>📝 あなたの投稿</h2>
         ${userPosts.length ? userPosts.map(p => {
@@ -1626,7 +1801,7 @@ function showMyPage(){
   const existingContent = document.querySelector('.wrap, section.hero');
 
   // すべてのメインコンテンツを非表示
-  document.querySelectorAll('header, section, .wrap:not(.mypage-wrap), .layout, .ownerbar, .seo, footer').forEach(el => {
+  document.querySelectorAll('header, section, .wrap:not(.mypage-wrap), .layout, .ownerbar, .seo, footer, .challenge-section, .unreviewed-section').forEach(el => {
     el.style.display = 'none';
   });
 
@@ -1640,7 +1815,7 @@ function showMyPage(){
 function hideMyPage(){
   const mypageContent = document.getElementById('mypage-content');
   if(mypageContent) mypageContent.remove();
-  document.querySelectorAll('header, section, .wrap, .layout, .ownerbar, .seo, footer').forEach(el => {
+  document.querySelectorAll('header, section, .wrap, .layout, .ownerbar, .seo, footer, .challenge-section, .unreviewed-section').forEach(el => {
     el.style.display = '';
   });
 }
@@ -1664,7 +1839,7 @@ function handleRoute(){
 
 function showSearchPage(){
   // ホームページ（検索・探すページ）を表示
-  document.querySelectorAll('header, section, .wrap, .layout, .ownerbar, .seo, footer').forEach(el => {
+  document.querySelectorAll('header, section, .wrap, .layout, .ownerbar, .seo, footer, .challenge-section, .unreviewed-section').forEach(el => {
     el.style.display = '';
   });
 }
@@ -2360,6 +2535,12 @@ document.addEventListener('DOMContentLoaded', () => {
   handleRoute();
   // 現在地から探す をデフォルトON（stores ロード完了と並行して GPS 取得開始）
   _autoGPS();
+  // 1000件チャレンジ統計を読み込んでUIに反映
+  loadGlobalStats().then(stats => {
+    window.kireinTotalPosts = stats.total_posts || 0;
+    updateChallengeUI(window.kireinTotalPosts);
+    renderAreaGauges(stats);
+  });
 });
 
 // ダミーデータ削除済み。実在店舗のみ Google Places API から取得
@@ -2704,6 +2885,8 @@ function calcScore(shopId){
 
 function render(){
   if(!document.getElementById('cnt')) return; // 探すページ以外では不要
+  // 未評価リストを一度だけ描画（STORES読み込み後）
+  if(STORES.length > 0) renderUnreviewedStores();
   const allResults = filtered();
   const LIMIT = 30;
   const r = allResults.slice(0, LIMIT);
