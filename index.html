@@ -2769,6 +2769,7 @@ function calcStoreRank(shopId){
 
 let onlyCertified = false; // キレイン認定店フィルター
 let onlyToiletReview = false; // Googleトイレ口コミありフィルター
+let onlyKireinVoted = false; // キレイン評価ありフィルター
 let toiletReviewLoading = false; // 取得中フラグ
 const TOILET_REVIEW_CACHE = {}; // placeId → true/false （取得済みキャッシュ）
 const activeAttrs = new Set();
@@ -2858,6 +2859,25 @@ toiletChip.onclick = async () => {
 };
 chipBox.appendChild(toiletChip);
 
+// キレイン評価ありチップ
+const kireinVotedChip = document.createElement('button');
+kireinVotedChip.className = 'chip';
+kireinVotedChip.innerHTML = '⭐ キレイン評価あり';
+kireinVotedChip.style.cssText = 'background:#fff;color:var(--pine);border:1.5px solid var(--line);font-weight:600';
+kireinVotedChip.onclick = () => {
+  onlyKireinVoted = !onlyKireinVoted;
+  if(onlyKireinVoted){
+    kireinVotedChip.style.cssText = 'background:#e8f5f0;color:var(--pine);border:1.5px solid var(--mint);font-weight:700;box-shadow:0 2px 8px rgba(37,181,152,.25)';
+    const cnt = STORES.filter(s => (s._cleanVotes||0)+(s._dirtyVotes||0) > 0).length;
+    kireinVotedChip.innerHTML = `⭐ キレイン評価あり（${cnt}件）`;
+  } else {
+    kireinVotedChip.style.cssText = 'background:#fff;color:var(--pine);border:1.5px solid var(--line);font-weight:600';
+    kireinVotedChip.innerHTML = '⭐ キレイン評価あり';
+  }
+  render();
+};
+chipBox.appendChild(kireinVotedChip);
+
 ATTRS.forEach(a=>{
   const b=document.createElement('button');b.className='chip';b.textContent=a;
   b.onclick=()=>{b.classList.toggle('on');activeAttrs.has(a)?activeAttrs.delete(a):activeAttrs.add(a);render();};
@@ -2872,6 +2892,7 @@ function filtered(){
   let r=STORES.filter(s=>{
     const rank = calcStoreRank(s.id);
     if(onlyCertified && rank==='bronze') return false; // 認定店フィルター
+    if(onlyKireinVoted && (s._cleanVotes||0)+(s._dirtyVotes||0) === 0) return false; // キレイン評価ありフィルター
     if(onlyToiletReview && !s.placeId) return false; // placeIdなしは除外
     if(onlyToiletReview && TOILET_REVIEW_CACHE[s.placeId] === false) return false;
     if(onlyToiletReview && TOILET_REVIEW_CACHE[s.placeId] !== true && !toiletReviewLoading) return false;
@@ -2891,6 +2912,11 @@ function filtered(){
     return r;
   }
 
+  // キレイン評価ありフィルター時は投票数の多い順
+  if(onlyKireinVoted){
+    r.sort((a,b) => ((b._cleanVotes||0)+(b._dirtyVotes||0)) - ((a._cleanVotes||0)+(a._dirtyVotes||0)));
+    return r;
+  }
   // 認定店フィルター時は認定ランク順
   if(onlyCertified){
     r.sort((a,b)=>RANKORDER[calcStoreRank(b.id)]-RANKORDER[calcStoreRank(a.id)]);
