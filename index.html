@@ -2768,10 +2768,7 @@ function calcStoreRank(shopId){
 }
 
 let onlyCertified = false; // キレイン認定店フィルター
-let onlyToiletReview = false; // Googleトイレ口コミありフィルター
 let onlyKireinVoted = false; // キレイン評価ありフィルター
-let toiletReviewLoading = false; // 取得中フラグ
-const TOILET_REVIEW_CACHE = {}; // placeId → true/false （取得済みキャッシュ）
 const activeAttrs = new Set();
 
 // populate selects + chips
@@ -2794,70 +2791,6 @@ certChip.onclick=()=>{
   render();
 };
 chipBox.appendChild(certChip);
-
-// Googleトイレ口コミありチップ
-const toiletChip = document.createElement('button');
-toiletChip.className = 'chip';
-toiletChip.innerHTML = '🚽 トイレ口コミあり';
-toiletChip.style.cssText = 'background:#fff;color:var(--pine);border:1.5px solid var(--line);font-weight:600';
-toiletChip.onclick = async () => {
-  if(toiletReviewLoading) return; // 取得中はクリック無効
-  onlyToiletReview = !onlyToiletReview;
-  if(!onlyToiletReview){
-    // OFF
-    toiletChip.innerHTML = '🚽 トイレ口コミあり';
-    toiletChip.style.cssText = 'background:#fff;color:var(--pine);border:1.5px solid var(--line);font-weight:600';
-    render();
-    return;
-  }
-  // ON → 取得開始
-  toiletChip.style.cssText = 'background:#fff7e6;color:#b85c00;border:1.5px solid #f0a030;font-weight:600';
-  toiletReviewLoading = true;
-  render(); // フィルターON（取得中は既存キャッシュで表示）
-
-  // 現在の表示順の先頭からplaceIdある店舗を最大50件取得
-  const targets = STORES.filter(s => s.placeId && !(s.placeId in TOILET_REVIEW_CACHE));
-  // GPS順 or 現在表示順から上位50件
-  const sorted = gpsSearchActive && gpsSearchLocation
-    ? [...targets].sort((a,b) =>
-        calculateDistance(gpsSearchLocation.lat, gpsSearchLocation.lng, a.lat||35.17, a.lng||136.88) -
-        calculateDistance(gpsSearchLocation.lat, gpsSearchLocation.lng, b.lat||35.17, b.lng||136.88)
-      ).slice(0, 50)
-    : targets.slice(0, 50);
-
-  let done = 0;
-  for(const store of sorted){
-    await new Promise(resolve => {
-      if(!placesService){ TOILET_REVIEW_CACHE[store.placeId] = false; done++; resolve(); return; }
-      placesService.getDetails(
-        { placeId: store.placeId, fields: ['reviews'], language: 'ja' },
-        (place, status) => {
-          if(status === google.maps.places.PlacesServiceStatus.OK && place?.reviews?.length){
-            TOILET_REVIEW_CACHE[store.placeId] = place.reviews.some(r =>
-              TOILET_KEYWORDS.some(kw => (r.text||'').includes(kw))
-            );
-          } else {
-            TOILET_REVIEW_CACHE[store.placeId] = false;
-          }
-          done++;
-          const hitCount = Object.values(TOILET_REVIEW_CACHE).filter(v=>v===true).length;
-          toiletChip.innerHTML = `🚽 確認中… ${done}/${sorted.length}（${hitCount}件ヒット）`;
-          render();
-          resolve();
-        }
-      );
-    });
-    await new Promise(r => setTimeout(r, 150)); // レート制限
-  }
-
-  // 完了
-  toiletReviewLoading = false;
-  const finalHit = Object.values(TOILET_REVIEW_CACHE).filter(v=>v===true).length;
-  toiletChip.innerHTML = `🚽 トイレ口コミあり（${finalHit}件）`;
-  toiletChip.style.cssText = 'background:#e6f5f1;color:#0d3d6b;border:1.5px solid var(--mint);font-weight:700;box-shadow:0 2px 8px rgba(37,181,152,.3)';
-  render();
-};
-chipBox.appendChild(toiletChip);
 
 // キレイン評価ありチップ
 const kireinVotedChip = document.createElement('button');
@@ -2893,9 +2826,6 @@ function filtered(){
     const rank = calcStoreRank(s.id);
     if(onlyCertified && rank==='bronze') return false; // 認定店フィルター
     if(onlyKireinVoted && (s._cleanVotes||0)+(s._dirtyVotes||0) === 0) return false; // キレイン評価ありフィルター
-    if(onlyToiletReview && !s.placeId) return false; // placeIdなしは除外
-    if(onlyToiletReview && TOILET_REVIEW_CACHE[s.placeId] === false) return false;
-    if(onlyToiletReview && TOILET_REVIEW_CACHE[s.placeId] !== true && !toiletReviewLoading) return false;
     return (!q||s.name.includes(q)||s.area.includes(q)||s.cat.includes(q)||(s.address||'').includes(q))&&
            (!ar||(s.address||'').includes(ar)||s.area.includes(ar))&&(!ct||s.cat===ct)&&
            [...activeAttrs].every(a=>{
@@ -3219,18 +3149,6 @@ function hl(id,on){
   document.querySelector(`.pin[data-id="${id}"]`)?.classList.toggle('active',on);
 }
 
-// トイレ関連キーワード（フィルタ＆ハイライト用）
-const TOILET_KEYWORDS = ['トイレ','お手洗い','レストルーム'];
-
-function highlightToiletWords(text){
-  let result = text;
-  TOILET_KEYWORDS.forEach(kw => {
-    result = result.replace(new RegExp(kw, 'g'),
-      `<mark style="background:#e6f5f1;color:#0d3d6b;padding:1px 3px;border-radius:3px;font-weight:700">${kw}</mark>`);
-  });
-  return result;
-}
-
 function openModal(id){
   const s=STORES.find(x=>x.id==id);
   if(!s) { console.error('店舗が見つかりません:', id); return; }
@@ -3277,27 +3195,11 @@ function openModal(id){
       <!-- オーナーからの改善報告 -->
       <div id="improveReportSection"></div>
 
-      <!-- Google 口コミ（トイレ言及抽出） -->
-      <div class="msec-t" style="display:flex;align-items:center;gap:8px;margin-top:20px">
-        <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-        Google の口コミ（トイレ言及）
-      </div>
-      <div id="googleReviewsSection" style="margin-bottom:4px">
-        <div style="text-align:center;padding:16px;color:var(--muted);font-size:12px">
-          <div style="font-size:20px;margin-bottom:6px">⏳</div>取得中...
-        </div>
-      </div>
-
       <div class="msec-t">このお店を評価する</div>
       <button class="btn mint" style="width:100%;font-size:15px;padding:14px" onclick="evaluateStore(${s.id})">🚻 このお店のトイレを評価する → ポイント獲得</button>
       <div class="note" style="margin-top:12px">💡 評価するとポイント獲得！ポイントに応じた特典・サービスは近日公開予定。</div>
     </div>`;
   document.getElementById('overlay').classList.add('open');
-
-  // Google 口コミを非同期で取得
-  if(s.placeId) loadGoogleReviews(s.placeId);
-  else document.getElementById('googleReviewsSection').innerHTML =
-    `<div style="font-size:12px;color:var(--muted);padding:8px 0">この店舗のGoogle口コミデータはありません</div>`;
 
   // オーナーの改善報告を非同期で取得
   if(s.placeId) loadImproveReport(s.placeId);
@@ -3423,58 +3325,6 @@ async function loadImproveReport(placeId){
   }
 }
 
-function loadGoogleReviews(placeId){
-  if(!placesService){ return; }
-  placesService.getDetails(
-    { placeId, fields: ['reviews','rating','user_ratings_total'], language: 'ja' },
-    (place, status) => {
-      const el = document.getElementById('googleReviewsSection');
-      if(!el) return; // モーダルが閉じられた
-
-      if(status !== google.maps.places.PlacesServiceStatus.OK || !place?.reviews?.length){
-        el.innerHTML = `<div style="font-size:12px;color:var(--muted);padding:8px 0">Google口コミが見つかりませんでした</div>`;
-        return;
-      }
-
-      // トイレ関連キーワードを含むレビューだけ抽出
-      const toiletReviews = place.reviews.filter(r =>
-        TOILET_KEYWORDS.some(kw => (r.text||'').includes(kw))
-      );
-
-      if(!toiletReviews.length){
-        el.innerHTML = `
-          <div style="font-size:12px;color:var(--muted);padding:10px;background:var(--soft);border-radius:10px">
-            😶 Google口コミ${place.reviews.length}件中、トイレへの言及が見つかりませんでした。<br>
-            <span style="opacity:.7">あなたが最初の評価者になりませんか？</span>
-          </div>`;
-        return;
-      }
-
-      const starsHtml = n => '★'.repeat(Math.round(n)) + '☆'.repeat(5-Math.round(n));
-      const html = toiletReviews.map(r => `
-        <div style="border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px;font-size:13px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <div style="display:flex;align-items:center;gap:8px">
-              ${r.profile_photo_url ? `<img src="${r.profile_photo_url}" style="width:24px;height:24px;border-radius:50%" />` : '<div style="width:24px;height:24px;border-radius:50%;background:var(--mint-soft);display:flex;align-items:center;justify-content:center;font-size:11px">👤</div>'}
-              <span style="font-weight:700;color:var(--ink)">${r.author_name}</span>
-            </div>
-            <span style="color:var(--gold);font-size:12px;letter-spacing:1px">${starsHtml(r.rating)}</span>
-          </div>
-          <p style="margin:0;line-height:1.7;color:var(--ink)">${highlightToiletWords(r.text)}</p>
-          <div style="font-size:11px;color:var(--muted);margin-top:6px">${r.relative_time_description}</div>
-        </div>`).join('');
-
-      el.innerHTML = `
-        ${html}
-        <div style="font-size:10px;color:var(--muted);text-align:right;margin-top:4px">
-          <a href="https://maps.google.com/?place_id=${placeId}" target="_blank" rel="noopener"
-             style="color:var(--muted);text-decoration:none">
-            🗺️ Google マップで全${place.reviews.length}件を見る
-          </a>　|　Powered by Google
-        </div>`;
-    }
-  );
-}
 function closeModal(){document.getElementById('overlay').classList.remove('open');}
 
 // お店を評価する（ログインチェック → proceedToPostForm へ直接）
