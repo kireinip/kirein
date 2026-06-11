@@ -3160,7 +3160,9 @@ function render(){
       : '';
 
     const photoUrl = s.photo
-      ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=200&photoreference=${s.photo}&key=AIzaSyDRfloVijkhdUhF9v_DG7O3JV17Fqd9V7w`
+      ? (s.photo.startsWith('http')
+          ? s.photo
+          : `https://maps.googleapis.com/maps/api/place/photo?maxwidth=200&photoreference=${s.photo}&key=AIzaSyDRfloVijkhdUhF9v_DG7O3JV17Fqd9V7w`)
       : null;
 
     return `
@@ -3286,7 +3288,7 @@ function openModal(id){
     <div class="mbody">
       ${s.photo ? `
         <div style="width:100%;height:180px;border-radius:12px;overflow:hidden;margin-bottom:14px;background:#0d3d6b">
-          <img src="https://maps.googleapis.com/maps/api/place/photo?maxwidth=600&photoreference=${s.photo}&key=AIzaSyDRfloVijkhdUhF9v_DG7O3JV17Fqd9V7w"
+          <img src="${s.photo.startsWith('http') ? s.photo : `https://maps.googleapis.com/maps/api/place/photo?maxwidth=600&photoreference=${s.photo}&key=AIzaSyDRfloVijkhdUhF9v_DG7O3JV17Fqd9V7w`}"
             alt="${s.name}" style="width:100%;height:100%;object-fit:cover">
         </div>` : ''}
       ${(()=>{
