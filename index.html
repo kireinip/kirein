@@ -858,6 +858,18 @@ function submitQuickVote(shopId){
   updateChallengeUI(window.kireinTotalPosts);
   incrementGlobalStats(shop?.area || '');
 
+  // 投票キャッシュを無効化（次のロード時にFirestoreから再取得させる）
+  try{ localStorage.removeItem(VOTES_CACHE_KEY); }catch(e){}
+  // メモリキャッシュも更新
+  if(window._kireinVoteCache){
+    const key = shop?.placeId || shop?.id;
+    if(key){
+      if(!window._kireinVoteCache[key]) window._kireinVoteCache[key] = { clean:0, dirty:0 };
+      if(isClean) window._kireinVoteCache[key].clean++;
+      else window._kireinVoteCache[key].dirty++;
+    }
+  }
+
   // 完了モーダル
   document.getElementById('modal').innerHTML = `
     <div class="mhead">
@@ -2546,6 +2558,63 @@ function nearbySearchWithPagination(request, allResults, resolve){
   });
 }
 
+// ========== 投票数をFirestoreから集計してSTORESに反映 ==========
+const VOTES_CACHE_KEY = 'kirein_votes_v1';
+const VOTES_CACHE_TTL = 15 * 60 * 1000; // 15分
+
+async function loadVoteCounts(){
+  if(!window.db) return;
+  // ローカルキャッシュ確認
+  try{
+    const raw = localStorage.getItem(VOTES_CACHE_KEY);
+    if(raw){
+      const { data, ts } = JSON.parse(raw);
+      if(Date.now() - ts < VOTES_CACHE_TTL){
+        window._kireinVoteCache = data;
+        applyVoteCountsToStores(data);
+        return;
+      }
+    }
+  }catch(e){}
+  // Firestore posts から集計
+  try{
+    const snap = await window.db.collection('posts').get();
+    const counts = {};
+    snap.forEach(doc => {
+      const d = doc.data();
+      const key = d.place_id || d.shop_id;
+      if(!key) return;
+      if(!counts[key]) counts[key] = { clean:0, dirty:0 };
+      if(d.vote === 'clean') counts[key].clean++;
+      else counts[key].dirty++;
+    });
+    window._kireinVoteCache = counts;
+    try{ localStorage.setItem(VOTES_CACHE_KEY, JSON.stringify({ data: counts, ts: Date.now() })); }catch(e){}
+    applyVoteCountsToStores(counts);
+  }catch(e){ console.warn('loadVoteCounts error:', e); }
+}
+
+function applyVoteCountsToStores(counts){
+  if(!STORES.length || !counts) return;
+  let changed = false;
+  STORES.forEach(s => {
+    const key = s.placeId || s.id;
+    const v = counts[key];
+    if(v){
+      s._cleanVotes = v.clean;
+      s._dirtyVotes = v.dirty;
+      changed = true;
+    }
+  });
+  // チップラベルを更新
+  const chip = document.getElementById('kireinVotedChip');
+  if(chip && onlyKireinVoted){
+    const cnt = STORES.filter(s => (s._cleanVotes||0)+(s._dirtyVotes||0) > 0).length;
+    chip.innerHTML = `⭐ キレイン評価あり（${cnt}件）`;
+  }
+  if(changed) render();
+}
+
 async function loadRestaurantsFromAPI(){
   const LOCAL_KEY = 'kirein_stores_v4';
   const WEEK_MS   = 7 * 24 * 60 * 60 * 1000;
@@ -2559,7 +2628,9 @@ async function loadRestaurantsFromAPI(){
       if(stores?.length > 0 && Date.now() - timestamp < HOUR_MS){
         STORES = stores;
         console.log(`✅ ローカルキャッシュ: ${stores.length}店舗`);
-        render(); return;
+        render();
+        loadVoteCounts();
+        return;
       }
     }
   }catch(e){}
@@ -2580,7 +2651,9 @@ async function loadRestaurantsFromAPI(){
             STORES = stores;
             try{ localStorage.setItem(LOCAL_KEY, JSON.stringify({ stores, timestamp: Date.now() })); }catch(e){}
             console.log(`✅ Firestoreキャッシュ: ${stores.length}店舗`);
-            render(); return;
+            render();
+            loadVoteCounts();
+            return;
           }
         }
       }
@@ -2599,7 +2672,9 @@ async function loadRestaurantsFromAPI(){
     if(typeIdx >= SEARCH_TYPES.length){
       try{ localStorage.setItem(LOCAL_KEY, JSON.stringify({ stores: STORES, timestamp: Date.now() })); }catch(e){}
       console.log(`🎉 ${STORES.length}店舗取得完了`);
-      render(); return;
+      render();
+      loadVoteCounts();
+      return;
     }
     const type = SEARCH_TYPES[typeIdx++];
     let idx = 0;
