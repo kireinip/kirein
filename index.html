@@ -3114,6 +3114,7 @@ function render(){
     const certLbl  = RANK_CERT_LBL[rank];
     const certColor= RANK_CERT_COLOR[rank];
 
+    const hasQuickVotes = (s._cleanVotes||0) + (s._dirtyVotes||0) > 0;
     const scoreHtml = hasScore ? `
       <div class="scores">
         <div class="sc">トイレ清潔<b>${score.toilet.toFixed(1)}<span class="star">★</span></b></div>
@@ -3121,7 +3122,7 @@ function render(){
         <div class="sc">総合<b>${score.total.toFixed(1)}<span class="star">★</span></b></div>
       </div>
       <div class="kirei">👍 <b>${score.count}</b> 件の投稿${score.repeatCount > 0 ? `　<span style="background:#fff3e0;color:#e65100;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:4px">🔄 リピート ${score.repeatCount}人</span>` : ''}</div>
-    ` : `
+    ` : hasQuickVotes ? `` : `
       <div style="margin-top:10px;font-size:12px;color:var(--muted);padding:8px;background:var(--bg-soft);border-radius:8px">
         📝 まだ評価がありません。最初の投稿者になりませんか？
       </div>
