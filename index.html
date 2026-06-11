@@ -2658,25 +2658,56 @@ async function loadRestaurantsFromAPI(){
     }
   }catch(e){}
 
-  // 2. Firestore 共有キャッシュ（週1回GASが更新）
+  // 2. Firestore 共有キャッシュ（週1回GASが更新）チャンク形式対応
   if(window.db){
     try{
-      const doc = await window.db.collection('cache').doc('restaurants').get();
-      if(doc.exists){
-        const d = doc.data();
-        // updated_at は Firestore Timestamp オブジェクト（.toDate()で変換）or 文字列の両方に対応
-        const updatedMs = d.updated_at?.toDate ? d.updated_at.toDate().getTime()
-                        : new Date(d.updated_at).getTime();
-        const age = Date.now() - updatedMs;
-        if(age < WEEK_MS && d.data){
+      // メタ情報でチャンク数確認
+      const metaDoc = await window.db.collection('cache').doc('restaurants_meta').get();
+      const chunkCount = metaDoc.exists ? Number(metaDoc.data().chunks) : 0;
+
+      if(chunkCount > 0){
+        // チャンク形式（restaurants_0, _1, _2 ...）
+        const chunkDocs = await Promise.all(
+          Array.from({ length: chunkCount }, (_, i) =>
+            window.db.collection('cache').doc('restaurants_' + i).get()
+          )
+        );
+        const allStores = [];
+        let latestMs = 0;
+        chunkDocs.forEach(doc => {
+          if(!doc.exists) return;
+          const d = doc.data();
+          const ts = d.updated_at?.toDate ? d.updated_at.toDate().getTime()
+                   : new Date(d.updated_at).getTime();
+          if(ts > latestMs) latestMs = ts;
           const stores = JSON.parse(d.data);
-          if(stores?.length > 0){
-            STORES = stores;
-            try{ localStorage.setItem(LOCAL_KEY, JSON.stringify({ stores, timestamp: Date.now() })); }catch(e){}
-            console.log(`✅ Firestoreキャッシュ: ${stores.length}店舗`);
-            render();
-            loadVoteCounts();
-            return;
+          if(stores?.length > 0) allStores.push(...stores);
+        });
+        if(allStores.length > 0 && Date.now() - latestMs < WEEK_MS){
+          STORES = allStores;
+          try{ localStorage.setItem(LOCAL_KEY, JSON.stringify({ stores: allStores, timestamp: Date.now() })); }catch(e){}
+          console.log(`✅ Firestoreキャッシュ(${chunkCount}チャンク): ${allStores.length}店舗`);
+          render();
+          loadVoteCounts();
+          return;
+        }
+      } else {
+        // 旧形式との後方互換
+        const doc = await window.db.collection('cache').doc('restaurants').get();
+        if(doc.exists){
+          const d = doc.data();
+          const updatedMs = d.updated_at?.toDate ? d.updated_at.toDate().getTime()
+                          : new Date(d.updated_at).getTime();
+          if(Date.now() - updatedMs < WEEK_MS && d.data){
+            const stores = JSON.parse(d.data);
+            if(stores?.length > 0){
+              STORES = stores;
+              try{ localStorage.setItem(LOCAL_KEY, JSON.stringify({ stores, timestamp: Date.now() })); }catch(e){}
+              console.log(`✅ Firestoreキャッシュ: ${stores.length}店舗`);
+              render();
+              loadVoteCounts();
+              return;
+            }
           }
         }
       }
