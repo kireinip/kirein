@@ -3165,7 +3165,7 @@ function render(){
     return `
     <div class="card" data-id="${s.id}" style="cursor:pointer"
          onmouseenter="hl(this.getAttribute('data-id'),true)" onmouseleave="hl(this.getAttribute('data-id'),false)">
-      <div class="thumb" ${photoUrl ? `style="background-image:url('${photoUrl}');background-size:cover;background-position:center"` : ''}>
+      <div class="thumb" ${photoUrl ? `style="background:url('${photoUrl}') center/cover no-repeat"` : ''}>
         <span class="rankbadge" style="background:${certColor||'#ccc'}">
           ${RANKCHAR[rank]||'?'}
         </span>
