@@ -943,10 +943,8 @@ function renderAreaGauges(stats){
 }
 
 function renderUnreviewedStores(){
-  if(window._unreviewedDone) return;
   const container = document.getElementById('unreviewedList');
   if(!container || STORES.length === 0) return;
-  window._unreviewedDone = true;
 
   const targetAreas = ['栄','名駅','大須','錦','金山','覚王山','矢場町'];
   const picks = [];
@@ -954,9 +952,11 @@ function renderUnreviewedStores(){
 
   for(const area of targetAreas){
     if(picks.length >= 5) break;
+    // quickVoteがない店だけを対象にする
     const cands = STORES.filter(s => {
       const a = s.area || '';
-      return (a === area || a.includes(area)) && !usedIds.has(s.id);
+      return (a === area || a.includes(area)) && !usedIds.has(s.id)
+          && (s._cleanVotes||0)+(s._dirtyVotes||0) === 0;
     });
     if(cands.length > 0){
       const pick = cands[Math.floor(Math.random() * cands.length)];
@@ -964,18 +964,23 @@ function renderUnreviewedStores(){
       usedIds.add(pick.id);
     }
   }
-  // 足りなければランダム補完
+  // 足りなければランダム補完（投票なしのみ）
   let tries = 0;
+  const unvoted = STORES.filter(s => (s._cleanVotes||0)+(s._dirtyVotes||0) === 0);
   while(picks.length < 5 && tries++ < 200){
-    const r = STORES[Math.floor(Math.random() * STORES.length)];
-    if(!usedIds.has(r.id)){ picks.push(r); usedIds.add(r.id); }
+    const r = unvoted[Math.floor(Math.random() * unvoted.length)];
+    if(r && !usedIds.has(r.id)){ picks.push(r); usedIds.add(r.id); }
   }
+
+  const section = document.getElementById('unreviewedSection');
+  if(picks.length === 0){ if(section) section.style.display='none'; return; }
+  if(section) section.style.display='';
 
   container.innerHTML = picks.slice(0,5).map(s => `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:8px">
       <div style="flex:1;min-width:0;margin-right:10px">
         <div style="font-weight:700;color:var(--pine);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">${s.area} ・ まだ評価がありません</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${s.area} ・ まだ誰も評価していません</div>
       </div>
       <button onclick="proceedToPostForm(${s.id})" class="btn sm mint" style="white-space:nowrap;padding:8px 14px;font-size:12px;flex-shrink:0">10秒評価</button>
     </div>
@@ -2606,12 +2611,33 @@ function applyVoteCountsToStores(counts){
       changed = true;
     }
   });
+
+  // チャレンジカウンター: 全投票数の合計
+  const totalVotes = Object.values(counts).reduce((sum, v) => sum + v.clean + v.dirty, 0);
+  window.kireinTotalPosts = totalVotes;
+  updateChallengeUI(totalVotes);
+
+  // エリアゲージ: STOREの投票数をエリア別に集計
+  const areaStats = { total_posts: totalVotes };
+  STORES.forEach(s => {
+    const total = (s._cleanVotes||0) + (s._dirtyVotes||0);
+    if(total > 0 && s.area){
+      areaStats['area_' + s.area] = (areaStats['area_' + s.area] || 0) + total;
+    }
+  });
+  renderAreaGauges(areaStats);
+
   // チップラベルを更新
   const chip = document.getElementById('kireinVotedChip');
-  if(chip && onlyKireinVoted){
+  if(chip){
     const cnt = STORES.filter(s => (s._cleanVotes||0)+(s._dirtyVotes||0) > 0).length;
-    chip.innerHTML = `⭐ キレイン評価あり（${cnt}件）`;
+    const isOn = onlyKireinVoted;
+    chip.innerHTML = isOn ? `⭐ キレイン評価あり（${cnt}件）` : '⭐ キレイン評価あり';
   }
+
+  // 未評価リストを再描画（voteデータが揃ってから）
+  renderUnreviewedStores();
+
   if(changed) render();
 }
 
