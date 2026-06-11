@@ -3159,14 +3159,18 @@ function render(){
       ? `<div class="quote">"${firstReview.p || firstReview}"</div>`
       : '';
 
+    const photoUrl = s.photo
+      ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=200&photoreference=${s.photo}&key=AIzaSyDRfloVijkhdUhF9v_DG7O3JV17Fqd9V7w`
+      : null;
+
     return `
     <div class="card" data-id="${s.id}" style="cursor:pointer"
          onmouseenter="hl(this.getAttribute('data-id'),true)" onmouseleave="hl(this.getAttribute('data-id'),false)">
-      <div class="thumb">
+      <div class="thumb" ${photoUrl ? `style="background-image:url('${photoUrl}');background-size:cover;background-position:center"` : ''}>
         <span class="rankbadge" style="background:${certColor||'#ccc'}">
           ${RANKCHAR[rank]||'?'}
         </span>
-        ${s.icon||'🍽️'}
+        ${photoUrl ? '' : (s.icon||'🍽️')}
       </div>
       <div class="body">
         <div class="top">
@@ -3280,6 +3284,11 @@ function openModal(id){
       <div class="mmeta">${s.area}・${s.cat}　|　👍 ${(s._cleanVotes||0)+(s.kirei||0)} 人が「きれい！」${(()=>{const sc=calcScore(s.id);return sc?.repeatCount>0?`　<span style="background:#fff3e0;color:#e65100;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px">🔄 トイレリピート ${sc.repeatCount}人</span>`:'';})()}</div>
     </div>
     <div class="mbody">
+      ${s.photo ? `
+        <div style="width:100%;height:180px;border-radius:12px;overflow:hidden;margin-bottom:14px;background:#0d3d6b">
+          <img src="https://maps.googleapis.com/maps/api/place/photo?maxwidth=600&photoreference=${s.photo}&key=AIzaSyDRfloVijkhdUhF9v_DG7O3JV17Fqd9V7w"
+            alt="${s.name}" style="width:100%;height:100%;object-fit:cover">
+        </div>` : ''}
       ${(()=>{
         const sc = calcScore(s.id);
         if(sc) return `
