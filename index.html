@@ -3152,7 +3152,9 @@ function render(){
             ? `<span style="font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:7px;background:#fff8dc;color:#9a6500;white-space:nowrap;animation:pulse-gold 1.5s ease-in-out infinite">✨ 未制覇</span>`
             : certLbl
               ? `<span style="font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:7px;background:${certColor}22;color:${certColor};white-space:nowrap">✦ ${certLbl}</span>`
-              : '<span style="font-size:11px;color:var(--muted);padding:4px 8px;background:var(--bg-soft);border-radius:6px">未評価</span>'}
+              : hasQuickVotes
+                ? `<span style="font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:7px;background:#e8f5f0;color:var(--mint);white-space:nowrap">⭐ 評価あり</span>`
+                : '<span style="font-size:11px;color:var(--muted);padding:4px 8px;background:var(--bg-soft);border-radius:6px">未評価</span>'}
         </div>
         ${scoreHtml}
         ${voteBarHtml(s)}
@@ -3168,8 +3170,10 @@ function render(){
 }
 
 
-// ヴァージンストア判定（全ユーザーの投稿が0件）
+// ヴァージンストア判定（全ユーザーの投稿が0件かつquickVoteも0件）
 function checkVirginStore(shopId){
+  const store = STORES.find(s => String(s.id) === String(shopId));
+  if((store?._cleanVotes||0) + (store?._dirtyVotes||0) > 0) return false;
   return getPosts().filter(p => String(p.shop_id) === String(shopId)).length === 0;
 }
 
@@ -3240,16 +3244,27 @@ function openModal(id){
           <div style="font-size:12px;color:#9a6500;margin-top:2px">あなたが初制覇！投稿するとボーナスポイントGET 🎉</div>
         </div>
       </div>` : ''}
-      <span class="mcert cert ${s.rank}">✦ キレイン認証 ${RANKLBL[s.rank]}｜${RANKDESC[s.rank]}</span>
+      ${(()=>{
+        const mr = calcStoreRank(s.id);
+        const hasVotes = (s._cleanVotes||0)+(s._dirtyVotes||0) > 0;
+        const desc = mr==='bronze' && hasVotes ? '評価あり（集計中）' : RANKDESC[mr];
+        return `<span class="mcert cert ${mr}">✦ キレイン認証 ${RANKLBL[mr]||'評価中'}｜${desc}</span>`;
+      })()}
       <h3>${s.name}</h3>
-      <div class="mmeta">${s.area}・${s.cat}　|　👍 ${s.kirei} 人が「きれい！」${(()=>{const sc=calcScore(s.id);return sc?.repeatCount>0?`　<span style="background:#fff3e0;color:#e65100;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px">🔄 トイレリピート ${sc.repeatCount}人</span>`:'';})()}</div>
+      <div class="mmeta">${s.area}・${s.cat}　|　👍 ${(s._cleanVotes||0)+(s.kirei||0)} 人が「きれい！」${(()=>{const sc=calcScore(s.id);return sc?.repeatCount>0?`　<span style="background:#fff3e0;color:#e65100;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px">🔄 トイレリピート ${sc.repeatCount}人</span>`:'';})()}</div>
     </div>
     <div class="mbody">
-      <div class="scoregrid" id="modal-score-grid">
-        <div class="b"><small>トイレ清潔</small><b>${s.sc.toilet.toFixed(1)}</b></div>
-        <div class="b"><small>空気・無臭</small><b>${s.sc.air.toFixed(1)}</b></div>
-        <div class="b"><small>総合</small><b>${s.sc.total.toFixed(1)}</b></div>
-      </div>
+      ${(()=>{
+        const sc = calcScore(s.id);
+        if(sc) return `
+          <div class="scoregrid" id="modal-score-grid">
+            <div class="b"><small>トイレ清潔</small><b>${sc.toilet.toFixed(1)}</b></div>
+            <div class="b"><small>空気・無臭</small><b>${sc.air.toFixed(1)}</b></div>
+            <div class="b"><small>総合</small><b>${sc.total.toFixed(1)}</b></div>
+          </div>`;
+        return '';
+      })()}
+      ${voteBarHtml(s)}
       <div class="tags" style="margin-bottom:6px">${s.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
 
       <div id="modal-kirein-photos">${(()=>{
